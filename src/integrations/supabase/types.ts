@@ -9,16 +9,230 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      evaluations: {
+        Row: {
+          created_at: string | null
+          evaluator_id: string
+          feasibility_score: number | null
+          feedback: string | null
+          id: string
+          idea_id: string
+          impact_score: number | null
+          innovation_score: number | null
+          overall_score: number | null
+          recommendation: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          evaluator_id: string
+          feasibility_score?: number | null
+          feedback?: string | null
+          id?: string
+          idea_id: string
+          impact_score?: number | null
+          innovation_score?: number | null
+          overall_score?: number | null
+          recommendation?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          evaluator_id?: string
+          feasibility_score?: number | null
+          feedback?: string | null
+          id?: string
+          idea_id?: string
+          impact_score?: number | null
+          innovation_score?: number | null
+          overall_score?: number | null
+          recommendation?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_evaluator_id_fkey"
+            columns: ["evaluator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "ideas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      idea_comments: {
+        Row: {
+          comment: string
+          created_at: string | null
+          id: string
+          idea_id: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string | null
+          id?: string
+          idea_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string | null
+          id?: string
+          idea_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idea_comments_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "ideas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "idea_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ideas: {
+        Row: {
+          assigned_evaluator_id: string | null
+          category: Database["public"]["Enums"]["idea_category"]
+          created_at: string | null
+          description: string
+          evaluated_at: string | null
+          expected_roi: number | null
+          id: string
+          implementation_cost: number | null
+          implemented_at: string | null
+          priority_score: number | null
+          status: Database["public"]["Enums"]["idea_status"]
+          strategic_alignment_score: number | null
+          submitted_at: string | null
+          submitter_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_evaluator_id?: string | null
+          category: Database["public"]["Enums"]["idea_category"]
+          created_at?: string | null
+          description: string
+          evaluated_at?: string | null
+          expected_roi?: number | null
+          id?: string
+          implementation_cost?: number | null
+          implemented_at?: string | null
+          priority_score?: number | null
+          status?: Database["public"]["Enums"]["idea_status"]
+          strategic_alignment_score?: number | null
+          submitted_at?: string | null
+          submitter_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_evaluator_id?: string | null
+          category?: Database["public"]["Enums"]["idea_category"]
+          created_at?: string | null
+          description?: string
+          evaluated_at?: string | null
+          expected_roi?: number | null
+          id?: string
+          implementation_cost?: number | null
+          implemented_at?: string | null
+          priority_score?: number | null
+          status?: Database["public"]["Enums"]["idea_status"]
+          strategic_alignment_score?: number | null
+          submitted_at?: string | null
+          submitter_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ideas_assigned_evaluator_id_fkey"
+            columns: ["assigned_evaluator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ideas_submitter_id_fkey"
+            columns: ["submitter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      idea_category:
+        | "innovation"
+        | "process_improvement"
+        | "cost_reduction"
+        | "customer_experience"
+        | "technology"
+        | "sustainability"
+      idea_status:
+        | "draft"
+        | "submitted"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "implemented"
+      user_role: "submitter" | "evaluator" | "management"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +347,24 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      idea_category: [
+        "innovation",
+        "process_improvement",
+        "cost_reduction",
+        "customer_experience",
+        "technology",
+        "sustainability",
+      ],
+      idea_status: [
+        "draft",
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected",
+        "implemented",
+      ],
+      user_role: ["submitter", "evaluator", "management"],
+    },
   },
 } as const
