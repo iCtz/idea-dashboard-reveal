@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -54,10 +53,10 @@ export const EvaluatorDashboard = ({ profile, activeView }: EvaluatorDashboardPr
       if (error) throw error;
 
       const avgScore = evaluations?.length 
-        ? evaluations.reduce((sum, eval) => sum + (eval.overall_score || 0), 0) / evaluations.length
+        ? evaluations.reduce((sum, evaluation) => sum + (evaluation.overall_score || 0), 0) / evaluations.length
         : 0;
 
-      const topRated = evaluations?.filter(eval => (eval.overall_score || 0) >= 8).length || 0;
+      const topRated = evaluations?.filter(evaluation => (evaluation.overall_score || 0) >= 8).length || 0;
 
       setStats({
         pending: pendingIdeas.length,
