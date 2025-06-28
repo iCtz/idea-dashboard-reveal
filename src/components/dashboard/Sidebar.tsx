@@ -7,7 +7,8 @@ import {
   Users, 
   Settings,
   LogOut,
-  Plus
+  Plus,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,11 +62,24 @@ export const Sidebar = ({ profile, activeView, onViewChange }: SidebarProps) => 
   const navigationItems = getNavigationItems();
 
   return (
-    <div className="w-64 bg-white shadow-lg flex flex-col">
-      <div className="p-6 border-b">
-        <h1 className="text-xl font-bold text-gray-900">Spark Hub</h1>
-        <p className="text-sm text-gray-600 mt-1">{profile.full_name}</p>
-        <p className="text-xs text-gray-500 capitalize">{profile.role}</p>
+    <div className="w-64 bg-sidebar shadow-xl flex flex-col border-r border-sidebar-border">
+      <div className="p-6 border-b border-sidebar-border/20">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="p-2 bg-sidebar-primary rounded-xl">
+            <Zap className="h-6 w-6 text-sidebar-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-sidebar-foreground font-poppins">YOU</h1>
+            <p className="text-sm text-sidebar-foreground/80 font-medium">Innovation Hub</p>
+          </div>
+        </div>
+        <div className="bg-sidebar-accent/20 rounded-lg p-3">
+          <p className="text-sm font-medium text-sidebar-foreground">{profile.full_name}</p>
+          <p className="text-xs text-sidebar-foreground/70 capitalize">{profile.role}</p>
+          {profile.department && (
+            <p className="text-xs text-sidebar-foreground/60">{profile.department}</p>
+          )}
+        </div>
       </div>
       
       <nav className="flex-1 p-4 space-y-2">
@@ -76,25 +90,27 @@ export const Sidebar = ({ profile, activeView, onViewChange }: SidebarProps) => 
               key={item.id}
               variant={activeView === item.id ? "default" : "ghost"}
               className={cn(
-                "w-full justify-start",
-                activeView === item.id && "bg-blue-600 hover:bg-blue-700"
+                "w-full justify-start h-12 font-medium transition-all duration-200",
+                activeView === item.id 
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg" 
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
               onClick={() => onViewChange(item.id)}
             >
-              <Icon className="mr-3 h-4 w-4" />
+              <Icon className="mr-3 h-5 w-5" />
               {item.label}
             </Button>
           );
         })}
       </nav>
       
-      <div className="p-4 border-t">
+      <div className="p-4 border-t border-sidebar-border/20">
         <Button
           variant="ghost"
-          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+          className="w-full justify-start h-12 text-red-400 hover:text-red-300 hover:bg-red-500/10 font-medium"
           onClick={handleSignOut}
         >
-          <LogOut className="mr-3 h-4 w-4" />
+          <LogOut className="mr-3 h-5 w-5" />
           Sign Out
         </Button>
       </div>
