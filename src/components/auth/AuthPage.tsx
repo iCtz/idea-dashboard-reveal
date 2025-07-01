@@ -58,7 +58,7 @@ export const AuthPage = () => {
         .single();
 
       if (!existingProfile) {
-        // Create profile if it doesn't exist
+        // Create profile if it doesn't exist - removed email_confirmed field
         const { error: profileError } = await supabase
           .from("profiles")
           .insert({
@@ -66,7 +66,6 @@ export const AuthPage = () => {
             email: user.email,
             full_name: user.name,
             role: user.userRole,
-            email_confirmed: true,
             department: user.role === "Management" ? "Executive" : user.role === "Evaluator" ? "R&D" : "Operations"
           });
 
@@ -150,18 +149,22 @@ export const AuthPage = () => {
   const handleTestLogin = async (testUser: typeof testUsers[0]) => {
     setLoading(true);
     try {
+      console.log(`Attempting login for ${testUser.name} (${testUser.email})`);
+      
       // First create the test profile
       await createTestProfile(testUser);
 
-      // Try to sign in with existing credentials first
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      // Try to sign in directly
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: testUser.email,
         password: "Abdu123+++",
       });
 
       if (signInError) {
+        console.log("Sign in failed, attempting to create account:", signInError.message);
+        
         // If sign in fails, create the account first
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: testUser.email,
           password: "Abdu123+++",
           options: {
@@ -176,20 +179,21 @@ export const AuthPage = () => {
           throw signUpError;
         }
 
-        // Create the profile manually since trigger might not work
-        await createTestProfile(testUser);
-
-        // Try signing in again
+        // Wait a moment then try to sign in again
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         const { error: secondSignInError } = await supabase.auth.signInWithPassword({
           email: testUser.email,
           password: "Abdu123+++",
         });
 
         if (secondSignInError) {
-          throw new Error(`Login failed. Account may need email confirmation.`);
+          console.error("Second sign in failed:", secondSignInError);
+          throw new Error(`Login failed: ${secondSignInError.message}`);
         }
       }
       
+      console.log("Login successful for", testUser.name);
       toast({
         title: "Login Successful",
         description: `Logged in as ${testUser.name} (${testUser.role})`,
@@ -238,7 +242,9 @@ export const AuthPage = () => {
         // Create the profile manually
         await createTestProfile(testUser);
 
-        // Try signing in again after account creation
+        // Wait and try signing in again
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         const { error: secondSignInError } = await supabase.auth.signInWithPassword({
           email: "test@you.com",
           password: "Abdu123+++",

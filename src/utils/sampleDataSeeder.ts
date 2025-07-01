@@ -20,6 +20,50 @@ export const seedSampleData = async () => {
 
     console.log("Seeding sample data...");
 
+    // Ensure test user profiles exist first
+    const testUsers = [
+      {
+        id: '11111111-1111-1111-1111-111111111111',
+        email: 'submitter@you.com',
+        full_name: 'Hani Gazim',
+        role: 'submitter' as const,
+        department: 'Operations'
+      },
+      {
+        id: '22222222-2222-2222-2222-222222222222',
+        email: 'evaluator@you.com',
+        full_name: 'Abdurhman Alhakeem',
+        role: 'evaluator' as const,
+        department: 'R&D'
+      },
+      {
+        id: '33333333-3333-3333-3333-333333333333',
+        email: 'management@you.com',
+        full_name: 'Osama Murshed',
+        role: 'management' as const,
+        department: 'Executive'
+      }
+    ];
+
+    // Create test user profiles if they don't exist
+    for (const user of testUsers) {
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+
+      if (!existingProfile) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert(user);
+        
+        if (profileError) {
+          console.error("Error creating test profile:", profileError);
+        }
+      }
+    }
+
     // Add sample ideas with proper typing
     const sampleIdeas = [
       {
