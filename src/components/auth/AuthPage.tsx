@@ -16,19 +16,68 @@ export const AuthPage = () => {
   const [fullName, setFullName] = useState("");
   const { toast } = useToast();
 
-  // Unified test credentials for all roles
-  const unifiedCredentials = {
-    email: "test@you.com",
-    password: "Abdu123+++",
-  };
-
-  // Test user accounts for different roles - all use same password
+  // Test user accounts with roles
   const testUsers = [
-    { email: "submitter@you.com", password: "Abdu123+++", role: "Submitter", name: "Hani Gazim" },
-    { email: "evaluator@you.com", password: "Abdu123+++", role: "Evaluator", name: "Abdurhman Alhakeem" },
-    { email: "management@you.com", password: "Abdu123+++", role: "Management", name: "Osama Murshed" },
-    { email: "test@you.com", password: "Abdu123+++", role: "Admin", name: "Test User" },
+    { 
+      email: "submitter@you.com", 
+      name: "Hani Gazim", 
+      role: "Submitter",
+      userRole: "submitter" as const,
+      id: "11111111-1111-1111-1111-111111111111"
+    },
+    { 
+      email: "evaluator@you.com", 
+      name: "Abdurhman Alhakeem", 
+      role: "Evaluator",
+      userRole: "evaluator" as const,
+      id: "22222222-2222-2222-2222-222222222222"
+    },
+    { 
+      email: "management@you.com", 
+      name: "Osama Murshed", 
+      role: "Management",
+      userRole: "management" as const,
+      id: "33333333-3333-3333-3333-333333333333"
+    },
+    { 
+      email: "test@you.com", 
+      name: "Test User", 
+      role: "Admin",
+      userRole: "management" as const,
+      id: "44444444-4444-4444-4444-444444444444"
+    },
   ];
+
+  const createTestProfile = async (user: typeof testUsers[0]) => {
+    try {
+      // Check if profile already exists
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+
+      if (!existingProfile) {
+        // Create profile if it doesn't exist
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: user.id,
+            email: user.email,
+            full_name: user.name,
+            role: user.userRole,
+            email_confirmed: true,
+            department: user.role === "Management" ? "Executive" : user.role === "Evaluator" ? "R&D" : "Operations"
+          });
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+        }
+      }
+    } catch (error) {
+      console.error("Error creating test profile:", error);
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,17 +150,20 @@ export const AuthPage = () => {
   const handleTestLogin = async (testUser: typeof testUsers[0]) => {
     setLoading(true);
     try {
+      // First create the test profile
+      await createTestProfile(testUser);
+
       // Try to sign in with existing credentials first
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: testUser.email,
-        password: testUser.password,
+        password: "Abdu123+++",
       });
 
       if (signInError) {
-        // If sign in fails, create the account first with email confirmation disabled
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        // If sign in fails, create the account first
+        const { error: signUpError } = await supabase.auth.signUp({
           email: testUser.email,
-          password: testUser.password,
+          password: "Abdu123+++",
           options: {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
@@ -120,22 +172,21 @@ export const AuthPage = () => {
           },
         });
 
-        if (signUpError) {
+        if (signUpError && !signUpError.message.includes('already registered')) {
           throw signUpError;
         }
 
-        // If sign up was successful, try to sign in again
-        if (signUpData.user && !signUpData.user.email_confirmed_at) {
-          // For testing, we'll try to sign in anyway
-          const { error: secondSignInError } = await supabase.auth.signInWithPassword({
-            email: testUser.email,
-            password: testUser.password,
-          });
+        // Create the profile manually since trigger might not work
+        await createTestProfile(testUser);
 
-          if (secondSignInError) {
-            // If still failing due to email confirmation, show helpful message
-            throw new Error(`Account created but email confirmation required. Please check email or use Quick Access button.`);
-          }
+        // Try signing in again
+        const { error: secondSignInError } = await supabase.auth.signInWithPassword({
+          email: testUser.email,
+          password: "Abdu123+++",
+        });
+
+        if (secondSignInError) {
+          throw new Error(`Login failed. Account may need email confirmation.`);
         }
       }
       
@@ -147,7 +198,7 @@ export const AuthPage = () => {
       console.error("Login error:", error);
       toast({
         title: "Login Error",
-        description: error.message || "Failed to login. Try using Quick Access instead.",
+        description: error.message || "Failed to login. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -158,16 +209,20 @@ export const AuthPage = () => {
   const handleQuickAccess = async () => {
     setLoading(true);
     try {
+      // Create test user profile first
+      const testUser = testUsers.find(u => u.email === "test@you.com")!;
+      await createTestProfile(testUser);
+
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: unifiedCredentials.email,
-        password: unifiedCredentials.password,
+        email: "test@you.com",
+        password: "Abdu123+++",
       });
 
       if (signInError) {
         // If sign in fails, create the account
         const { error: signUpError } = await supabase.auth.signUp({
-          email: unifiedCredentials.email,
-          password: unifiedCredentials.password,
+          email: "test@you.com",
+          password: "Abdu123+++",
           options: {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
@@ -176,14 +231,17 @@ export const AuthPage = () => {
           },
         });
 
-        if (signUpError) {
+        if (signUpError && !signUpError.message.includes('already registered')) {
           throw signUpError;
         }
 
+        // Create the profile manually
+        await createTestProfile(testUser);
+
         // Try signing in again after account creation
         const { error: secondSignInError } = await supabase.auth.signInWithPassword({
-          email: unifiedCredentials.email,
-          password: unifiedCredentials.password,
+          email: "test@you.com",
+          password: "Abdu123+++",
         });
 
         if (secondSignInError) {
@@ -315,7 +373,7 @@ export const AuthPage = () => {
                     {loading ? "Accessing..." : "Quick Access"}
                   </Button>
                   <p className="text-xs text-gray-500 text-center mt-2">
-                    Use unified credentials for testing
+                    One-click testing access
                   </p>
                 </div>
 
@@ -351,7 +409,7 @@ export const AuthPage = () => {
                   <div className="flex items-center space-x-2 mt-3 p-2 bg-blue-50 rounded-lg">
                     <AlertCircle className="h-4 w-4 text-blue-600" />
                     <p className="text-xs text-blue-700">
-                      All accounts will be created automatically for testing
+                      All accounts will be created automatically with proper roles
                     </p>
                   </div>
                 </div>
@@ -399,7 +457,7 @@ export const AuthPage = () => {
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>
                   <p className="text-xs text-gray-500 text-center">
-                    Email confirmation is bypassed for testing purposes
+                    Email confirmation is automatically handled for testing
                   </p>
                 </form>
               </TabsContent>

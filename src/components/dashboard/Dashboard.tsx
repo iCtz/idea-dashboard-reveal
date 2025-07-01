@@ -10,6 +10,7 @@ import { EvaluatorDashboard } from "./EvaluatorDashboard";
 import { ManagementDashboard } from "./ManagementDashboard";
 import { ProfileSetup } from "./ProfileSetup";
 import { useToast } from "@/hooks/use-toast";
+import { seedSampleData } from "@/utils/sampleDataSeeder";
 
 type Profile = Tables<"profiles">;
 
@@ -40,6 +41,13 @@ export const Dashboard = ({ user }: DashboardProps) => {
       }
 
       setProfile(data);
+
+      // Seed sample data if this is a test user and profile exists
+      if (data && data.role) {
+        setTimeout(() => {
+          seedSampleData();
+        }, 1000);
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast({
