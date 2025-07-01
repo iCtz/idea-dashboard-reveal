@@ -7,21 +7,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Lightbulb, Users, BarChart3, Zap, TestTube } from "lucide-react";
+import { Lightbulb, Users, BarChart3, Zap, TestTube, AlertCircle } from "lucide-react";
 
 export const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [testMode, setTestMode] = useState(false);
   const { toast } = useToast();
 
-  // Test user accounts for different roles
+  // Unified test credentials for all roles
+  const unifiedCredentials = {
+    email: "test@you.com",
+    password: "Abdu123+++",
+  };
+
+  // Test user accounts for different roles - all use same password
   const testUsers = [
-    { email: "submitter@test.com", password: "password123", role: "Submitter", name: "Alice Johnson" },
-    { email: "evaluator@test.com", password: "password123", role: "Evaluator", name: "Bob Smith" },
-    { email: "management@test.com", password: "password123", role: "Management", name: "Carol Davis" },
+    { email: "submitter@you.com", password: "Abdu123+++", role: "Submitter", name: "Alice Johnson" },
+    { email: "evaluator@you.com", password: "Abdu123+++", role: "Evaluator", name: "Bob Smith" },
+    { email: "management@you.com", password: "Abdu123+++", role: "Management", name: "Carol Davis" },
+    { email: "test@you.com", password: "Abdu123+++", role: "Admin", name: "Test User" },
   ];
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -29,7 +35,6 @@ export const AuthPage = () => {
     setLoading(true);
 
     try {
-      // Create user with auto-confirm for testing
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -43,18 +48,10 @@ export const AuthPage = () => {
 
       if (error) throw error;
 
-      // For testing, we'll auto-confirm the user
-      if (data.user && !data.user.email_confirmed_at) {
-        toast({
-          title: "Account Created!",
-          description: "You can now sign in with your credentials. Email confirmation bypassed for testing.",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Account created successfully!",
-        });
-      }
+      toast({
+        title: "Account Created!",
+        description: "You can now sign in with your credentials. Email confirmation bypassed for testing.",
+      });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -91,12 +88,39 @@ export const AuthPage = () => {
   const handleTestLogin = async (testUser: typeof testUsers[0]) => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // First try to sign in with existing credentials
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: testUser.email,
         password: testUser.password,
       });
 
-      if (error) throw error;
+      if (signInError) {
+        // If sign in fails, try to create the account first
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: testUser.email,
+          password: testUser.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: testUser.name,
+            },
+          },
+        });
+
+        if (signUpError) {
+          throw signUpError;
+        }
+
+        // After signup, try signing in again
+        const { error: secondSignInError } = await supabase.auth.signInWithPassword({
+          email: testUser.email,
+          password: testUser.password,
+        });
+
+        if (secondSignInError) {
+          throw secondSignInError;
+        }
+      }
       
       toast({
         title: "Test Login Successful",
@@ -104,7 +128,58 @@ export const AuthPage = () => {
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Login Error",
+        description: `Failed to login: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickAccess = async () => {
+    setLoading(true);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: unifiedCredentials.email,
+        password: unifiedCredentials.password,
+      });
+
+      if (signInError) {
+        // If sign in fails, create the account
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: unifiedCredentials.email,
+          password: unifiedCredentials.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: "Test User",
+            },
+          },
+        });
+
+        if (signUpError) {
+          throw signUpError;
+        }
+
+        // Try signing in again
+        const { error: secondSignInError } = await supabase.auth.signInWithPassword({
+          email: unifiedCredentials.email,
+          password: unifiedCredentials.password,
+        });
+
+        if (secondSignInError) {
+          throw secondSignInError;
+        }
+      }
+      
+      toast({
+        title: "Quick Access Successful",
+        description: "Logged in with unified test credentials",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Quick Access Error",
         description: error.message,
         variant: "destructive",
       });
@@ -114,62 +189,62 @@ export const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen gradient-you flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 flex items-center justify-center p-4">
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         {/* Hero Section */}
-        <div className="space-y-6 text-white">
+        <div className="space-y-6 text-gray-800">
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Zap className="h-8 w-8 text-white" />
+              <div className="p-2 bg-you-accent rounded-xl border border-you-accent">
+                <Zap className="h-8 w-8 text-you-purple" />
               </div>
-              <h1 className="text-4xl font-bold font-poppins">
+              <h1 className="text-4xl font-bold font-poppins text-gray-900">
                 YOU Innovation Hub
               </h1>
             </div>
-            <p className="text-xl text-white/90 font-light">
+            <p className="text-xl text-gray-600 font-light">
               Transform ideas into reality with our comprehensive innovation management platform
             </p>
           </div>
           
           <div className="grid grid-cols-1 gap-4">
-            <div className="flex items-center space-x-4 p-4 glass-effect rounded-xl">
+            <div className="flex items-center space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm">
               <div className="p-2 bg-you-orange rounded-lg">
                 <Lightbulb className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">Submit & Track Ideas</h3>
-                <p className="text-sm text-white/80">Share innovative thoughts and monitor progress</p>
+                <h3 className="font-semibold text-gray-900">Submit & Track Ideas</h3>
+                <p className="text-sm text-gray-600">Share innovative thoughts and monitor progress</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-4 p-4 glass-effect rounded-xl">
+            <div className="flex items-center space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm">
               <div className="p-2 bg-you-green rounded-lg">
                 <Users className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">Collaborative Evaluation</h3>
-                <p className="text-sm text-white/80">Expert review and strategic alignment assessment</p>
+                <h3 className="font-semibold text-gray-900">Collaborative Evaluation</h3>
+                <p className="text-sm text-gray-600">Expert review and strategic alignment assessment</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-4 p-4 glass-effect rounded-xl">
+            <div className="flex items-center space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm">
               <div className="p-2 bg-you-blue rounded-lg">
                 <BarChart3 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">Analytics & Insights</h3>
-                <p className="text-sm text-white/80">Data-driven decisions and performance tracking</p>
+                <h3 className="font-semibold text-gray-900">Analytics & Insights</h3>
+                <p className="text-sm text-gray-600">Data-driven decisions and performance tracking</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Auth Form */}
-        <Card className="w-full max-w-md mx-auto shadow-2xl border-0">
+        <Card className="w-full max-w-md mx-auto shadow-xl border border-gray-200">
           <CardHeader className="text-center pb-6">
-            <CardTitle className="text-2xl font-poppins">Welcome Back</CardTitle>
-            <CardDescription className="text-base">
+            <CardTitle className="text-2xl font-poppins text-gray-900">Welcome Back</CardTitle>
+            <CardDescription className="text-base text-gray-600">
               Sign in to your account or create a new one
             </CardDescription>
           </CardHeader>
@@ -206,15 +281,29 @@ export const AuthPage = () => {
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full h-12 bg-you-purple hover:bg-you-purple/90 font-medium" disabled={loading}>
+                  <Button type="submit" className="w-full h-12 bg-gray-800 hover:bg-gray-900 font-medium" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
 
+                {/* Quick Access Button */}
+                <div className="mt-4">
+                  <Button
+                    onClick={handleQuickAccess}
+                    className="w-full h-12 bg-you-purple hover:bg-you-purple/90 font-medium"
+                    disabled={loading}
+                  >
+                    {loading ? "Accessing..." : "Quick Access (Abdu123+++)"}
+                  </Button>
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Use unified credentials: test@you.com / Abdu123+++
+                  </p>
+                </div>
+
                 {/* Test Users Section */}
                 <div className="mt-6 pt-6 border-t">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-sm text-gray-600">Quick Test Login</h4>
+                    <h4 className="font-medium text-sm text-gray-600">Test Different Roles</h4>
                     <TestTube className="h-4 w-4 text-gray-400" />
                   </div>
                   <div className="space-y-2">
@@ -222,26 +311,30 @@ export const AuthPage = () => {
                       <Button
                         key={index}
                         variant="outline"
-                        className="w-full justify-start h-auto p-3 text-left"
+                        className="w-full justify-start h-auto p-3 text-left border-gray-200 hover:bg-gray-50"
                         onClick={() => handleTestLogin(user)}
                         disabled={loading}
                       >
                         <div className="flex items-center space-x-3">
                           <div className={`w-3 h-3 rounded-full ${
                             user.role === 'Submitter' ? 'bg-you-blue' : 
-                            user.role === 'Evaluator' ? 'bg-you-green' : 'bg-you-orange'
+                            user.role === 'Evaluator' ? 'bg-you-green' : 
+                            user.role === 'Management' ? 'bg-you-orange' : 'bg-you-purple'
                           }`}></div>
                           <div>
-                            <div className="font-medium text-sm">{user.name}</div>
-                            <div className="text-xs text-gray-500">{user.role}</div>
+                            <div className="font-medium text-sm text-gray-900">{user.name}</div>
+                            <div className="text-xs text-gray-500">{user.role} • {user.password}</div>
                           </div>
                         </div>
                       </Button>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Click any test user to login instantly and explore the platform
-                  </p>
+                  <div className="flex items-center space-x-2 mt-3 p-2 bg-blue-50 rounded-lg">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <p className="text-xs text-blue-700">
+                      All test accounts use the same password: Abdu123+++
+                    </p>
+                  </div>
                 </div>
               </TabsContent>
               
@@ -283,7 +376,7 @@ export const AuthPage = () => {
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full h-12 bg-you-purple hover:bg-you-purple/90 font-medium" disabled={loading}>
+                  <Button type="submit" className="w-full h-12 bg-gray-800 hover:bg-gray-900 font-medium" disabled={loading}>
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>
                   <p className="text-xs text-gray-500 text-center">

@@ -63,17 +63,17 @@ export const Sidebar = ({ profile, activeView, onViewChange }: SidebarProps) => 
 
   return (
     <div className="w-64 bg-sidebar shadow-xl flex flex-col border-r border-sidebar-border">
-      <div className="p-6 border-b border-sidebar-border/20">
+      <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="p-2 bg-sidebar-primary rounded-xl">
-            <Zap className="h-6 w-6 text-sidebar-primary-foreground" />
+          <div className="p-2 bg-you-accent rounded-xl border border-you-accent">
+            <Zap className="h-6 w-6 text-you-purple" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-sidebar-foreground font-poppins">YOU</h1>
             <p className="text-sm text-sidebar-foreground/80 font-medium">Innovation Hub</p>
           </div>
         </div>
-        <div className="bg-sidebar-accent/20 rounded-lg p-3">
+        <div className="bg-you-accent/50 rounded-lg p-3 border border-you-accent/30">
           <p className="text-sm font-medium text-sidebar-foreground">{profile.full_name}</p>
           <p className="text-xs text-sidebar-foreground/70 capitalize">{profile.role}</p>
           {profile.department && (
@@ -92,8 +92,8 @@ export const Sidebar = ({ profile, activeView, onViewChange }: SidebarProps) => 
               className={cn(
                 "w-full justify-start h-12 font-medium transition-all duration-200",
                 activeView === item.id 
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg" 
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  ? "bg-you-accent text-sidebar-foreground shadow-md border border-you-accent" 
+                  : "text-sidebar-foreground hover:bg-you-accent/30 hover:text-sidebar-foreground"
               )}
               onClick={() => onViewChange(item.id)}
             >
@@ -104,10 +104,10 @@ export const Sidebar = ({ profile, activeView, onViewChange }: SidebarProps) => 
         })}
       </nav>
       
-      <div className="p-4 border-t border-sidebar-border/20">
+      <div className="p-4 border-t border-sidebar-border">
         <Button
           variant="ghost"
-          className="w-full justify-start h-12 text-red-400 hover:text-red-300 hover:bg-red-500/10 font-medium"
+          className="w-full justify-start h-12 text-red-500 hover:text-red-600 hover:bg-red-50 font-medium"
           onClick={handleSignOut}
         >
           <LogOut className="mr-3 h-5 w-5" />

@@ -6,7 +6,7 @@
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
-/* Definition of the design system with YOU Innovation Hub branding */
+/* Definition of the design system with YOU Innovation Hub branding - White-based theme */
 
 @layer base {
   :root {
@@ -19,9 +19,9 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* YOU Innovation Hub Primary Colors */
-    --primary: 262 83% 58%; /* Purple */
-    --primary-foreground: 210 40% 98%;
+    /* YOU Innovation Hub Primary Colors - White-based */
+    --primary: 220 13% 91%; /* Light gray as primary */
+    --primary-foreground: 222.2 84% 4.9%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -29,29 +29,29 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 262 83% 58%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 13% 91%;
+    --accent-foreground: 222.2 84% 4.9%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 262 83% 58%;
+    --ring: 220 13% 91%;
 
     --radius: 0.75rem;
 
-    /* YOU Innovation Hub Sidebar Colors */
-    --sidebar-background: 262 83% 58%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 262 83% 58%;
-    --sidebar-accent: 262 83% 65%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 262 83% 65%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* YOU Innovation Hub Sidebar Colors - White-based */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 220 13% 91%;
+    --sidebar-primary-foreground: 222.2 84% 4.9%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 84% 4.9%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 220 13% 91%;
 
-    /* Custom YOU Innovation Hub Colors */
+    /* Custom YOU Innovation Hub Colors - Updated for white theme */
     --you-purple: 262 83% 58%;
     --you-purple-light: 262 83% 65%;
     --you-purple-dark: 262 83% 50%;
@@ -61,20 +61,21 @@
     --you-red: 0 84% 60%;
     --you-gray: 220 13% 91%;
     --you-gray-dark: 220 13% 46%;
+    --you-accent: 220 13% 91%;
   }
 
   .dark {
-    --background: 262 83% 4%;
+    --background: 220 13% 5%;
     --foreground: 210 40% 98%;
 
-    --card: 262 83% 4%;
+    --card: 220 13% 5%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 262 83% 4%;
+    --popover: 220 13% 5%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 220 13% 91%;
+    --primary-foreground: 222.2 84% 4.9%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -82,24 +83,24 @@
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 262 83% 58%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 13% 91%;
+    --accent-foreground: 222.2 84% 4.9%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 262 83% 58%;
+    --ring: 220 13% 91%;
 
-    --sidebar-background: 262 83% 6%;
+    --sidebar-background: 220 13% 8%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 262 83% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 262 83% 15%;
+    --sidebar-primary: 220 13% 91%;
+    --sidebar-primary-foreground: 222.2 84% 4.9%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 262 83% 15%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 220 13% 91%;
   }
 }
 
@@ -119,7 +120,7 @@
   }
 }
 
-/* YOU Innovation Hub Custom Utilities */
+/* YOU Innovation Hub Custom Utilities - Updated for white theme */
 @layer utilities {
   .text-you-purple {
     color: hsl(var(--you-purple));
@@ -157,13 +158,25 @@
     background-color: hsl(var(--you-orange));
   }
   
+  .text-you-accent {
+    color: hsl(var(--you-accent));
+  }
+  
+  .bg-you-accent {
+    background-color: hsl(var(--you-accent));
+  }
+  
+  .border-you-accent {
+    border-color: hsl(var(--you-accent));
+  }
+  
   .gradient-you {
-    background: linear-gradient(135deg, hsl(var(--you-purple)), hsl(var(--you-blue)));
+    background: linear-gradient(135deg, hsl(var(--you-accent)), hsl(var(--you-blue)));
   }
   
   .glass-effect {
     backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.3);
   }
 }
