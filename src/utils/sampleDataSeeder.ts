@@ -1,5 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+
+type IdeaCategory = Database["public"]["Enums"]["idea_category"];
+type IdeaStatus = Database["public"]["Enums"]["idea_status"];
 
 export const seedSampleData = async () => {
   try {
@@ -16,14 +20,14 @@ export const seedSampleData = async () => {
 
     console.log("Seeding sample data...");
 
-    // Add sample ideas
+    // Add sample ideas with proper typing
     const sampleIdeas = [
       {
         id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
         title: 'AI-Powered Customer Service Chatbot',
         description: 'Implement an AI chatbot to handle 80% of customer inquiries automatically, reducing response time and improving customer satisfaction while lowering operational costs.',
-        category: 'technology',
-        status: 'submitted',
+        category: 'technology' as IdeaCategory,
+        status: 'submitted' as IdeaStatus,
         submitter_id: '11111111-1111-1111-1111-111111111111',
         strategic_alignment_score: 9,
         implementation_cost: 50000.00,
@@ -33,8 +37,8 @@ export const seedSampleData = async () => {
         id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
         title: 'Green Energy Initiative',
         description: 'Transform our facilities to use 100% renewable energy sources, reducing carbon footprint by 60% and energy costs by 30% over 5 years.',
-        category: 'sustainability',
-        status: 'under_review',
+        category: 'sustainability' as IdeaCategory,
+        status: 'under_review' as IdeaStatus,
         submitter_id: '11111111-1111-1111-1111-111111111111',
         strategic_alignment_score: 8,
         implementation_cost: 250000.00,
@@ -45,8 +49,8 @@ export const seedSampleData = async () => {
         id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
         title: 'Remote Work Productivity Suite',
         description: 'Develop a comprehensive digital workspace that increases remote work efficiency by 40% through integrated collaboration tools.',
-        category: 'process_improvement',
-        status: 'approved',
+        category: 'process_improvement' as IdeaCategory,
+        status: 'approved' as IdeaStatus,
         submitter_id: '11111111-1111-1111-1111-111111111111',
         strategic_alignment_score: 7,
         implementation_cost: 75000.00,
@@ -57,8 +61,8 @@ export const seedSampleData = async () => {
         id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
         title: 'Customer Loyalty Rewards Program',
         description: 'Create a gamified loyalty program to increase customer retention by 25% and average order value by 15%.',
-        category: 'customer_experience',
-        status: 'implemented',
+        category: 'customer_experience' as IdeaCategory,
+        status: 'implemented' as IdeaStatus,
         submitter_id: '11111111-1111-1111-1111-111111111111',
         strategic_alignment_score: 8,
         implementation_cost: 30000.00,
@@ -69,8 +73,8 @@ export const seedSampleData = async () => {
         id: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
         title: 'Automated Inventory Management',
         description: 'Implement IoT sensors and AI to optimize inventory levels, reducing waste by 20% and improving stock availability.',
-        category: 'innovation',
-        status: 'rejected',
+        category: 'innovation' as IdeaCategory,
+        status: 'rejected' as IdeaStatus,
         submitter_id: '11111111-1111-1111-1111-111111111111',
         strategic_alignment_score: 6,
         implementation_cost: 100000.00,
