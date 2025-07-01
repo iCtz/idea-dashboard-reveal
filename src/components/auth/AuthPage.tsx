@@ -24,9 +24,9 @@ export const AuthPage = () => {
 
   // Test user accounts for different roles - all use same password
   const testUsers = [
-    { email: "submitter@you.com", password: "Abdu123+++", role: "Submitter", name: "Alice Johnson" },
-    { email: "evaluator@you.com", password: "Abdu123+++", role: "Evaluator", name: "Bob Smith" },
-    { email: "management@you.com", password: "Abdu123+++", role: "Management", name: "Carol Davis" },
+    { email: "submitter@you.com", password: "Abdu123+++", role: "Submitter", name: "Hani Gazim" },
+    { email: "evaluator@you.com", password: "Abdu123+++", role: "Evaluator", name: "Abdurhman Alhakeem" },
+    { email: "management@you.com", password: "Abdu123+++", role: "Management", name: "Osama Murshed" },
     { email: "test@you.com", password: "Abdu123+++", role: "Admin", name: "Test User" },
   ];
 
@@ -48,10 +48,23 @@ export const AuthPage = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Account Created!",
-        description: "You can now sign in with your credentials. Email confirmation bypassed for testing.",
+      // Auto-confirm email for testing by attempting to sign in immediately
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
+
+      if (!signInError) {
+        toast({
+          title: "Account Created & Signed In!",
+          description: "Welcome to YOU Innovation Hub",
+        });
+      } else {
+        toast({
+          title: "Account Created!",
+          description: "Please check your email for confirmation (if required).",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -88,15 +101,15 @@ export const AuthPage = () => {
   const handleTestLogin = async (testUser: typeof testUsers[0]) => {
     setLoading(true);
     try {
-      // First try to sign in with existing credentials
+      // Try to sign in with existing credentials first
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: testUser.email,
         password: testUser.password,
       });
 
       if (signInError) {
-        // If sign in fails, try to create the account first
-        const { error: signUpError } = await supabase.auth.signUp({
+        // If sign in fails, create the account first with email confirmation disabled
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: testUser.email,
           password: testUser.password,
           options: {
@@ -111,25 +124,30 @@ export const AuthPage = () => {
           throw signUpError;
         }
 
-        // After signup, try signing in again
-        const { error: secondSignInError } = await supabase.auth.signInWithPassword({
-          email: testUser.email,
-          password: testUser.password,
-        });
+        // If sign up was successful, try to sign in again
+        if (signUpData.user && !signUpData.user.email_confirmed_at) {
+          // For testing, we'll try to sign in anyway
+          const { error: secondSignInError } = await supabase.auth.signInWithPassword({
+            email: testUser.email,
+            password: testUser.password,
+          });
 
-        if (secondSignInError) {
-          throw secondSignInError;
+          if (secondSignInError) {
+            // If still failing due to email confirmation, show helpful message
+            throw new Error(`Account created but email confirmation required. Please check email or use Quick Access button.`);
+          }
         }
       }
       
       toast({
-        title: "Test Login Successful",
+        title: "Login Successful",
         description: `Logged in as ${testUser.name} (${testUser.role})`,
       });
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login Error",
-        description: `Failed to login: ${error.message}`,
+        description: error.message || "Failed to login. Try using Quick Access instead.",
         variant: "destructive",
       });
     } finally {
@@ -162,22 +180,23 @@ export const AuthPage = () => {
           throw signUpError;
         }
 
-        // Try signing in again
+        // Try signing in again after account creation
         const { error: secondSignInError } = await supabase.auth.signInWithPassword({
           email: unifiedCredentials.email,
           password: unifiedCredentials.password,
         });
 
         if (secondSignInError) {
-          throw secondSignInError;
+          throw new Error("Account created but login failed. Please try again.");
         }
       }
       
       toast({
         title: "Quick Access Successful",
-        description: "Logged in with unified test credentials",
+        description: "Logged in successfully",
       });
     } catch (error: any) {
+      console.error("Quick access error:", error);
       toast({
         title: "Quick Access Error",
         description: error.message,
@@ -293,10 +312,10 @@ export const AuthPage = () => {
                     className="w-full h-12 bg-you-purple hover:bg-you-purple/90 font-medium"
                     disabled={loading}
                   >
-                    {loading ? "Accessing..." : "Quick Access (Abdu123+++)"}
+                    {loading ? "Accessing..." : "Quick Access"}
                   </Button>
                   <p className="text-xs text-gray-500 text-center mt-2">
-                    Use unified credentials: test@you.com / Abdu123+++
+                    Use unified credentials for testing
                   </p>
                 </div>
 
@@ -323,7 +342,7 @@ export const AuthPage = () => {
                           }`}></div>
                           <div>
                             <div className="font-medium text-sm text-gray-900">{user.name}</div>
-                            <div className="text-xs text-gray-500">{user.role} • {user.password}</div>
+                            <div className="text-xs text-gray-500">{user.role}</div>
                           </div>
                         </div>
                       </Button>
@@ -332,7 +351,7 @@ export const AuthPage = () => {
                   <div className="flex items-center space-x-2 mt-3 p-2 bg-blue-50 rounded-lg">
                     <AlertCircle className="h-4 w-4 text-blue-600" />
                     <p className="text-xs text-blue-700">
-                      All test accounts use the same password: Abdu123+++
+                      All accounts will be created automatically for testing
                     </p>
                   </div>
                 </div>
