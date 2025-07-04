@@ -36,7 +36,15 @@ npm i
 npm run
 npm install -g prisma
 prisma init
+# update the .env file with your database connection string
+# Step 5: Install the Prisma CLI globally if you haven't already.
+# create or update the schema.prisma file with your database schema
+npx prisma generate
+# Step 5: Run the Prisma migrations to set up your database schema.
 npx prisma db push
+#or
+npx prisma migrate dev --name "migration_name"
+# Step 6: Start the development server.
 # terminal1:
 npm run start
 # terminal2:
