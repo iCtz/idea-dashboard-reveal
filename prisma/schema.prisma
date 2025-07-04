@@ -1,15 +1,108 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// schema.prisma
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  submitter
+  evaluator
+  management
+}
+
+enum IdeaStatus {
+  draft
+  submitted
+  under_review
+  approved
+  rejected
+  implemented
+}
+
+enum IdeaCategory {
+  innovation
+  process_improvement
+  cost_reduction
+  customer_experience
+  technology
+  sustainability
+}
+
+model Profile {
+  id           String     @id @db.Uuid
+  email        String?
+  full_name    String?
+  role         UserRole   @default(submitter)
+  department   String?
+  created_at   DateTime   @default(now()) @db.Timestamptz
+  updated_at   DateTime   @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  submitted_ideas Idea[]  @relation("submitter_ideas")
+  evaluated_ideas Idea[]  @relation("evaluator_ideas")
+  evaluations    Evaluation[]
+  comments       IdeaComment[]
+}
+
+model Idea {
+  id                       String      @id @default(uuid()) @db.Uuid
+  title                    String
+  description              String
+  category                 IdeaCategory
+  status                   IdeaStatus  @default(draft)
+  priority_score           Int         @default(0)
+  implementation_cost      Float?      @db.Decimal(10, 2)
+  expected_roi             Float?      @db.Decimal(10, 2)
+  strategic_alignment_score Int?       @default(1)
+  created_at               DateTime    @default(now()) @db.Timestamptz
+  updated_at               DateTime    @default(now()) @updatedAt @db.Timestamptz
+  submitted_at             DateTime?   @db.Timestamptz
+  evaluated_at             DateTime?   @db.Timestamptz
+  implemented_at           DateTime?   @db.Timestamptz
+
+  // Relations
+  submitter_id            String      @db.Uuid
+  submitter               Profile     @relation("submitter_ideas", fields: [submitter_id], references: [id])
+
+  assigned_evaluator_id   String?     @db.Uuid
+  assigned_evaluator      Profile?    @relation("evaluator_ideas", fields: [assigned_evaluator_id], references: [id])
+
+  evaluations            Evaluation[]
+  comments               IdeaComment[]
+}
+
+model Evaluation {
+  id                 String    @id @default(uuid()) @db.Uuid
+  feasibility_score   Int?      @default(1)
+  impact_score        Int?      @default(1)
+  innovation_score    Int?      @default(1)
+  overall_score       Int?      @default(1)
+  feedback           String?
+  recommendation     String?
+  created_at         DateTime  @default(now()) @db.Timestamptz
+  updated_at         DateTime  @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  idea_id           String    @db.Uuid
+  idea              Idea      @relation(fields: [idea_id], references: [id])
+
+  evaluator_id      String    @db.Uuid
+  evaluator         Profile   @relation(fields: [evaluator_id], references: [id])
+}
+
+model IdeaComment {
+  id          String    @id @default(uuid()) @db.Uuid
+  comment     String
+  created_at  DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  idea_id    String    @db.Uuid
+  idea       Idea      @relation(fields: [idea_id], references: [id])
+
+  user_id    String    @db.Uuid
+  user       Profile   @relation(fields: [user_id], references: [id])
 }
