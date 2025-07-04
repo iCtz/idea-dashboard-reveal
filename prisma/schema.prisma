@@ -55,8 +55,8 @@ model Idea {
   category                 IdeaCategory
   status                   IdeaStatus  @default(draft)
   priority_score           Int         @default(0)
-  implementation_cost      Float?      @db.Decimal(10, 2)
-  expected_roi             Float?      @db.Decimal(10, 2)
+  implementation_cost      Decimal?    @db.Decimal(10, 2)  // Changed from Float? to Decimal?
+  expected_roi             Decimal?    @db.Decimal(10, 2)  // Changed from Float? to Decimal?
   strategic_alignment_score Int?       @default(1)
   created_at               DateTime    @default(now()) @db.Timestamptz
   updated_at               DateTime    @default(now()) @updatedAt @db.Timestamptz
@@ -64,13 +64,11 @@ model Idea {
   evaluated_at             DateTime?   @db.Timestamptz
   implemented_at           DateTime?   @db.Timestamptz
 
-  // Relations
+  // Relations (unchanged)
   submitter_id            String      @db.Uuid
   submitter               Profile     @relation("submitter_ideas", fields: [submitter_id], references: [id])
-
   assigned_evaluator_id   String?     @db.Uuid
   assigned_evaluator      Profile?    @relation("evaluator_ideas", fields: [assigned_evaluator_id], references: [id])
-
   evaluations            Evaluation[]
   comments               IdeaComment[]
 }
