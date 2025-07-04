@@ -33,6 +33,13 @@ cd <YOUR_PROJECT_NAME>
 npm i
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
+npm run
+npm install -g prisma
+prisma init
+npx prisma db push
+# terminal1:
+npm run start
+# terminal2:
 npm run dev
 ```
 
