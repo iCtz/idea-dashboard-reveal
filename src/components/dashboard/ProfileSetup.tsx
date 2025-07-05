@@ -1,15 +1,14 @@
 
-import { useState } from "react";
-// import { User } from "@supabase/supabase-js";
-import type { Session } from "next-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Tables } from "@/integrations/supabase/types";
+import type { Session } from "next-auth";
+import type { Tables } from "@/lib/types";
+import { updateProfile } from "@/app/dashboard/actions";
 
 type Profile = Tables<"profiles">;
 
@@ -18,48 +17,52 @@ type ProfileSetupProps = {
   onProfileUpdate: (profile: Profile) => void;
 }
 
-export const ProfileSetup = ({ user, onProfileUpdate }: ProfileSetupProps) => {
-  const [loading, setLoading] = useState(false);
-  const [fullName, setFullName] = useState(user.name || "");
-  const [department, setDepartment] = useState("");
-  const [role, setRole] = useState<"submitter" | "evaluator" | "management">("submitter");
+export function ProfileSetup({ user, onProfileUpdate }: ProfileSetupProps) {
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleSubmit = async (formData: FormData) => {
+    const fullName = formData.get("fullName") as string;
+    const department = formData.get("department") as string;
+    const role = formData.get("role") as "submitter" | "evaluator" | "management";
+    if (!fullName || !role || !user.id || !user.email) {
+      return;
+    }
 
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .upsert({
-          id: user.id,
-          email: user.email!, // The user email is expected to exist in the session at this stage.
+    startTransition(async () => {
+      const result = await updateProfile({
+        id: user.id!,
+        email: user.email!,
+        fullName,
+        department,
+        role,
+      });
+
+    if (result?.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been successfully set up.",
+        });
+        // The onProfileUpdate callback is no longer strictly necessary
+        // because revalidatePath will refresh the data, but we can keep it
+        // for a more immediate client-side state update if desired.
+        onProfileUpdate({
+          id: user.id!,
+          email: user.email!,
           full_name: fullName,
           department,
           role,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Profile setup completed successfully!",
-      });
-
-      onProfileUpdate(data);
-    } catch (error) {
-      console.error("Error setting up profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to setup profile",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+    });
   };
 
   return (
@@ -72,15 +75,14 @@ export const ProfileSetup = ({ user, onProfileUpdate }: ProfileSetupProps) => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
               <Input
                 id="fullName"
+                name="fullName"
                 type="text"
                 placeholder="Enter your full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
                 required
               />
             </div>
@@ -89,16 +91,15 @@ export const ProfileSetup = ({ user, onProfileUpdate }: ProfileSetupProps) => {
               <Label htmlFor="department">Department</Label>
               <Input
                 id="department"
+                name="department"
                 type="text"
                 placeholder="Enter your department"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={role} onValueChange={(value: "submitter" | "evaluator" | "management") => setRole(value)}>
+              <Select name="role" required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
@@ -110,8 +111,8 @@ export const ProfileSetup = ({ user, onProfileUpdate }: ProfileSetupProps) => {
               </Select>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Setting up..." : "Complete Setup"}
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? "Saving..." : "Complete Setup"}
             </Button>
           </form>
         </CardContent>

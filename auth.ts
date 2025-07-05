@@ -4,9 +4,6 @@ import Credentials from "next-auth/providers/credentials";
 import { db } from "@/lib/db"; // IMPORTANT: Make sure your Prisma client is exported from here
 import bcrypt from "bcryptjs";
 
-// --- DEBUGGING STEP ---
-console.log(`[Auth] USE_LOCAL_AUTH is set to: ${process.env.USE_LOCAL_AUTH}`);
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
   session: { strategy: "jwt" },
@@ -47,14 +44,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             user.password
           );
 
-          console.log(`credentials is: $credentials`);
-          console.log(`password is: ${credentials.password}`);
-          console.log(`user password is: ${user.password}`);
-
-          // if (!passwordsMatch) {
-          //   console.warn("AUTHORIZE: Password mismatch for user:", user.email);
-          //   return null;
-          // }
+          if (!passwordsMatch) {
+            console.warn("AUTHORIZE: Password mismatch for user:", user.email);
+            return null;
+          }
 
           console.log("AUTHORIZE: Success! User authenticated:", user.email);
           // 5. On success, return the user object
@@ -66,4 +59,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    /**
+     * The `session` callback is called when a session is checked.
+     * We can use this to add the user's profile data (id, role, etc.) to the session object.
+     */
+    async session({ token, session }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+      }
+      if (token.role && session.user) {
+        session.user.role = token.role as "submitter" | "evaluator" | "management";
+      }
+      if (token.full_name && session.user) {
+        session.user.full_name = token.full_name as string;
+      }
+      if (token.department && session.user) {
+        session.user.department = token.department as string;
+      }
+      return session;
+    },
+
+    /**
+     * The `jwt` callback is called when a JWT is created (i.e., at sign in)
+     * or updated (i.e., when a session is accessed in the background).
+     * We can use this to persist the user's profile data in the token.
+     */
+    async jwt({ token }) {
+      if (!token.sub) return token;
+
+      const existingUser = await db.profile.findUnique({
+        where: { id: token.sub },
+      });
+
+      if (!existingUser) return token;
+
+      // Add profile data to the token
+      token.role = existingUser.role;
+      token.full_name = existingUser.full_name;
+      token.department = existingUser.department;
+
+      return token;
+    },
+  },
 });
