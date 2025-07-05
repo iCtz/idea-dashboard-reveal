@@ -8,16 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Lightbulb, Clock, CheckCircle, XCircle, TrendingUp } from "lucide-react";
 import { IdeaSubmissionForm } from "./IdeaSubmissionForm";
 import { IdeaCard } from "./IdeaCard";
+import { Session } from "next-auth";
 
 type Profile = Tables<"profiles">;
 type Idea = Tables<"ideas">;
 
 interface SubmitterDashboardProps {
+  user: Session['user'];
   profile: Profile;
   activeView: string;
 }
 
-export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardProps) => {
+// export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardProps) => {
+export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, profile, activeView }) => {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -33,7 +36,7 @@ export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardPr
       const { data, error } = await supabase
         .from("ideas")
         .select("*")
-        .eq("submitter_id", profile.id)
+        .eq("submitter_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -54,7 +57,7 @@ export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardPr
     } finally {
       setLoading(false);
     }
-  }, [profile.id]);
+  }, [user.id]);
 
   useEffect(() => {
     fetchUserIdeas();
