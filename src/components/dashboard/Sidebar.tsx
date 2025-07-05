@@ -12,10 +12,8 @@ import {
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
-
-type Profile = Tables<"profiles">;
+import { Profile } from "@/lib/types";
 
 interface SidebarProps {
   profile: Profile;

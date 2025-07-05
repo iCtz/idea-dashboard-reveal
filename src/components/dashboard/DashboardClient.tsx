@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import type { Session } from "next-auth";
-import { Tables, Idea, Profile, Evaluation } from "@/lib/types";
+import { Idea, Profile, Evaluation } from "@/lib/types";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SubmitterDashboard } from "./SubmitterDashboard";
 import { EvaluatorDashboard } from "./EvaluatorDashboard";
 import { ManagementDashboard } from "./ManagementDashboard";
 import { ProfileSetup } from "./ProfileSetup";
-
-// type Profile = Tables<"profiles">;
 
 interface DashboardClientProps {
   user: Session["user"];
@@ -89,7 +87,7 @@ export function DashboardClient({
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar
-        user={user}
+        profile={profile}
         activeView={activeView}
         onViewChange={setActiveView}
       />

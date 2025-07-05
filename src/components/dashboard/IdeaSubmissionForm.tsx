@@ -1,7 +1,6 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { useTransition, useRef } from "react";
+import { Profile } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Lightbulb } from "lucide-react";
-
-type Profile = Tables<"profiles">;
+import { createIdea } from "@/app/dashboard/actions";
+import { IdeaCategory } from "@prisma/client";
 
 interface IdeaSubmissionFormProps {
   profile: Profile;
@@ -19,64 +18,49 @@ interface IdeaSubmissionFormProps {
 }
 
 export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionFormProps) => {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "",
-    implementation_cost: "",
-    expected_roi: "",
-    strategic_alignment_score: "",
-  });
+  const [isPending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleSubmit = async (formData: FormData) => {
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const category = formData.get("category") as IdeaCategory;
+    const implementation_cost = formData.get("implementation_cost") as string;
+    const expected_roi = formData.get("expected_roi") as string;
+    const strategic_alignment_score = formData.get("strategic_alignment_score") as string;
 
-    try {
-      const { error } = await supabase.from("ideas").insert({
-        title: formData.title,
-        description: formData.description,
-        category: formData.category as any,
-        submitter_id: profile.id,
-        implementation_cost: formData.implementation_cost ? parseFloat(formData.implementation_cost) : null,
-        expected_roi: formData.expected_roi ? parseFloat(formData.expected_roi) : null,
-        strategic_alignment_score: formData.strategic_alignment_score ? parseInt(formData.strategic_alignment_score) : null,
-        status: "draft",
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Your idea has been submitted successfully!",
-      });
-
-      setFormData({
-        title: "",
-        description: "",
-        category: "",
-        implementation_cost: "",
-        expected_roi: "",
-        strategic_alignment_score: "",
-      });
-
-      onIdeaSubmitted();
-    } catch (error) {
-      console.error("Error submitting idea:", error);
-      toast({
-        title: "Error",
-        description: "Failed to submit idea",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    if (!title || !description || !category) {
+      toast({ title: "Missing required fields", variant: "destructive" });
+      return;
     }
-  };
 
-  const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    startTransition(async () => {
+      const result = await createIdea({
+        title,
+        description,
+        category,
+        submitterId: profile.id,
+        implementationCost: implementation_cost ? parseFloat(implementation_cost) : null,
+        expectedRoi: expected_roi ? parseFloat(expected_roi) : null,
+        strategicAlignmentScore: strategic_alignment_score ? parseInt(strategic_alignment_score) : null,
+      });
+
+      if (result?.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Your idea has been submitted successfully!",
+        });
+        formRef.current?.reset();
+        onIdeaSubmitted(); // This can be called to trigger any client-side-only updates if needed
+      }
+    });
   };
 
   return (
@@ -92,14 +76,13 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form ref={formRef} action={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Idea Title *</Label>
               <Input
                 id="title"
+                name="title"
                 placeholder="Enter a compelling title for your idea"
-                value={formData.title}
-                onChange={(e) => handleChange("title", e.target.value)}
                 required
               />
             </div>
@@ -108,9 +91,8 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
               <Label htmlFor="description">Description *</Label>
               <Textarea
                 id="description"
+                name="description"
                 placeholder="Describe your idea in detail, including the problem it solves and proposed solution"
-                value={formData.description}
-                onChange={(e) => handleChange("description", e.target.value)}
                 rows={6}
                 required
               />
@@ -119,7 +101,7 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
-                <Select value={formData.category} onValueChange={(value) => handleChange("category", value)}>
+                <Select name="category" required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -136,10 +118,7 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
 
               <div className="space-y-2">
                 <Label htmlFor="strategic_alignment_score">Strategic Alignment (1-10)</Label>
-                <Select 
-                  value={formData.strategic_alignment_score} 
-                  onValueChange={(value) => handleChange("strategic_alignment_score", value)}
-                >
+                <Select name="strategic_alignment_score">
                   <SelectTrigger>
                     <SelectValue placeholder="Rate alignment" />
                   </SelectTrigger>
@@ -159,10 +138,9 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
                 <Label htmlFor="implementation_cost">Implementation Cost ($)</Label>
                 <Input
                   id="implementation_cost"
+                  name="implementation_cost"
                   type="number"
                   placeholder="Estimated cost"
-                  value={formData.implementation_cost}
-                  onChange={(e) => handleChange("implementation_cost", e.target.value)}
                 />
               </div>
 
@@ -170,21 +148,20 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
                 <Label htmlFor="expected_roi">Expected ROI (%)</Label>
                 <Input
                   id="expected_roi"
+                  name="expected_roi"
                   type="number"
                   placeholder="Expected return"
-                  value={formData.expected_roi}
-                  onChange={(e) => handleChange("expected_roi", e.target.value)}
                 />
               </div>
             </div>
 
             <div className="flex space-x-4">
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? "Submitting..." : "Submit Idea"}
+              <Button type="submit" disabled={isPending} className="flex-1">
+                {isPending ? "Submitting..." : "Submit Idea"}
               </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   // Save as draft logic
                   toast({

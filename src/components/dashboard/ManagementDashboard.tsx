@@ -1,13 +1,14 @@
-
-import { useState, useEffect } from "react";
 import { useMemo } from "react";
 import { Idea, Profile } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Users, Lightbulb, CheckCircle, Clock, Target } from "lucide-react";
+import { Session } from "next-auth";
 
 interface ManagementDashboardProps {
-  profile: Profile;
+  user: Session["user"];
+  allIdeas: Idea[];
+  userCount: number;
   activeView: string;
 }
 
@@ -21,47 +22,27 @@ type StatusChartData = {
   count: number;
 };
 
-// export const ManagementDashboard = ({ profile, activeView }: ManagementDashboardProps) => {
-export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, activeView }) => {
-  const [stats, setStats] = useState({
-    totalIdeas: 0,
-    totalUsers: 0,
-    activeIdeas: 0,
-    implementedIdeas: 0,
-    successRate: 0,
-    avgTimeToImplement: 0,
-  });
-  const [categoryData, setCategoryData] = useState<CategoryChartData[]>([]);
-  const [statusData, setStatusData] = useState<StatusChartData[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF6F61', '#6B5B95', '#88B04B', '#F7CAC9'];
-
-  // Destructure props and provide default values if necessary
-  const { allIdeas = [], userCount = 0 } = props;
-
+export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, allIdeas = [], userCount = 0, activeView }) => {
   const data = useMemo(() => {
-    // Calculate main stats
     const implementedIdeas = allIdeas.filter(idea => idea.status === "implemented").length;
     const activeIdeas = allIdeas.filter(idea => ["submitted", "under_review", "approved"].includes(idea.status)).length;
 
-    const calculatedStats = {
+    const stats = {
       totalIdeas: allIdeas.length,
       totalUsers: userCount,
       activeIdeas: activeIdeas,
       implementedIdeas: implementedIdeas,
       successRate: allIdeas.length > 0 ? Math.round((implementedIdeas / allIdeas.length) * 100) : 0,
-      avgTimeToImplement: 30, // Placeholder
+      avgTimeToImplement: 30, // Placeholder value
     };
 
-    // Process data for charts
     const categoryCount = allIdeas.reduce((acc: Record<string, number>, idea) => {
       if (idea.category) {
         acc[idea.category] = (acc[idea.category] || 0) + 1;
       }
       return acc;
     }, {});
-    const categoryChartData = Object.entries(categoryCount).map(([name, value]) => ({ name: name.replace(/_/g, " "), value }))
+    const categoryData = Object.entries(categoryCount).map(([name, value]) => ({ name: name.replace(/_/g, " "), value }));
 
     const statusCount = allIdeas.reduce((acc: Record<string, number>, idea) => {
       if (idea.status) {
@@ -69,16 +50,13 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
       }
       return acc;
     }, {});
-    const statusChartData = Object.entries(statusCount).map(([name, count]) => ({ name: name.replace(/_/g, " "), count }));
+    const statusData = Object.entries(statusCount).map(([name, count]) => ({ name: name.replace(/_/g, " "), count }));
 
-    return {
-      stats: calculatedStats,
-      categoryData: categoryChartData,
-      statusData: statusChartData,
-    };
+    return { stats, categoryData, statusData };
   }, [allIdeas, userCount]);
-  // Directly use the memoized data
+
   const { stats, categoryData, statusData } = data;
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF6F61', '#6B5B95', '#88B04B', '#F7CAC9'];
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">

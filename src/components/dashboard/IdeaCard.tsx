@@ -1,11 +1,8 @@
-
-import { Tables } from "@/integrations/supabase/types";
+import { Idea } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, DollarSign } from "lucide-react";
 import { format } from "date-fns";
-
-type Idea = Tables<"ideas">;
 
 interface IdeaCardProps {
   idea: Idea;
@@ -73,7 +70,7 @@ export const IdeaCard = ({ idea, detailed = false }: IdeaCardProps) => {
         <CardDescription className={`${detailed ? "line-clamp-4" : "line-clamp-2"} mb-4`}>
           {idea.description}
         </CardDescription>
-        
+
         {detailed && (
           <div className="space-y-2 text-sm text-gray-600">
             {idea.implementation_cost && (
@@ -85,12 +82,12 @@ export const IdeaCard = ({ idea, detailed = false }: IdeaCardProps) => {
             {idea.expected_roi && (
               <div className="flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" />
-                Expected ROI: {idea.expected_roi}%
+                Expected ROI: {idea.expected_roi.toString()}%
               </div>
             )}
           </div>
         )}
-        
+
         <div className="flex items-center justify-between mt-4 pt-4 border-t text-xs text-gray-500">
           <div className="flex items-center">
             <Calendar className="h-3 w-3 mr-1" />

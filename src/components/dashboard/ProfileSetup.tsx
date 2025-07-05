@@ -1,5 +1,5 @@
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,12 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import type { Session } from "next-auth";
-import type { Tables } from "@/lib/types";
+import type { Profile } from "@/lib/types";
 import { updateProfile } from "@/app/dashboard/actions";
+import { UserRole } from "@prisma/client";
 
-type Profile = Tables<"profiles">;
-
-type ProfileSetupProps = {
+interface ProfileSetupProps {
   user: Session["user"];
   onProfileUpdate: (profile: Profile) => void;
 }
@@ -54,12 +53,16 @@ export function ProfileSetup({ user, onProfileUpdate }: ProfileSetupProps) {
         // for a more immediate client-side state update if desired.
         onProfileUpdate({
           id: user.id!,
+          name: user.name || null,
           email: user.email!,
-          full_name: fullName,
-          department,
-          role,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          full_name: fullName || null,
+          password: null, // Password is not set here
+          department: department || null,
+          role: user.role as UserRole || role,
+          // This is a client-side approximation for an immediate UI update.
+          // The server-side revalidation will provide the canonical data.
+          created_at: new Date(),
+          updated_at: new Date(),
         });
       }
     });

@@ -3,9 +3,7 @@ import { Search, Bell, Filter, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tables } from "@/integrations/supabase/types";
-
-type Profile = Tables<"profiles">;
+import { Profile } from "@/lib/types";
 
 interface HeaderProps {
   profile: Profile;
@@ -46,18 +44,18 @@ export const Header = ({ profile }: HeaderProps) => {
             />
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-800 hover:bg-you-accent/20">
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </Button>
-          
+
           <Button variant="ghost" size="sm" className="relative text-gray-600 hover:text-gray-800 hover:bg-you-accent/20">
             <Bell className="h-4 w-4" />
             <span className="absolute -top-1 -right-1 h-2 w-2 bg-you-orange rounded-full"></span>
           </Button>
-          
+
           <div className="flex items-center space-x-3">
             <Avatar className={`h-10 w-10 ${getRoleColor(profile.role || 'submitter')}`}>
               <AvatarFallback className="text-white font-semibold">

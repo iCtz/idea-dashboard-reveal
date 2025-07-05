@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Session } from "next-auth";
 import { useMemo } from "react";
 import { Idea, Profile, Evaluation } from "@/lib/types";
@@ -14,15 +13,7 @@ interface EvaluatorDashboardProps {
   activeView: string;
 }
 
-export const EvaluatorDashboard = ({ profile, activeView }: EvaluatorDashboardProps) => {
-  const [pendingIdeas, setPendingIdeas] = useState<Idea[]>([]);
-  const [stats, setStats] = useState({
-    pending: 0,
-    evaluated: 0,
-    avgScore: 0 as number,
-    topRated: 0,
-  });
-
+export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, profile, pendingIdeas, evaluations, activeView }) => {
   const stats = useMemo(() => {
     const avgScore =
       evaluations.length > 0
@@ -32,7 +23,6 @@ export const EvaluatorDashboard = ({ profile, activeView }: EvaluatorDashboardPr
 
     const topRated = evaluations.filter((e) => (e.overall_score || 0) >= 8)
       .length;
-
 
     return {
       pending: pendingIdeas.length,
@@ -94,12 +84,6 @@ export const EvaluatorDashboard = ({ profile, activeView }: EvaluatorDashboardPr
         </CardHeader>
         <CardContent className="pt-2">
           {pendingIdeas.length > 0 ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
-              ))}
-            </div>
-          ) : pendingIdeas.length > 0 ? (
             <div className="space-y-4">
               {pendingIdeas.slice(0, 5).map((idea) => (
                 <div key={idea.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">

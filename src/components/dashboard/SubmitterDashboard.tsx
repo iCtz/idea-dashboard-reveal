@@ -8,9 +8,6 @@ import { IdeaSubmissionForm } from "./IdeaSubmissionForm";
 import { IdeaCard } from "./IdeaCard";
 import { Session } from "next-auth";
 
-// type Profile = Tables<"profiles">;
-// type Idea = Tables<"ideas">;
-
 interface SubmitterDashboardProps {
   user: Session['user'];
   profile: Profile;
