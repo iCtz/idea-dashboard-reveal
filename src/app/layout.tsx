@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/index.css"; // Assuming your global styles are here
+import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
   title: "Idea Dashboard",
@@ -9,5 +10,11 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body suppressHydrationWarning={true}>{children}</body></html>;
+  return (
+    <html lang="en">
+      <body suppressHydrationWarning={true}>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
 }
