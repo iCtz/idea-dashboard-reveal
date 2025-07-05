@@ -1,3 +1,16 @@
+import type { Prisma } from "@prisma/client";
+
+// This pattern allows us to get the full type information for our models,
+// including relations, if they are defined in your Prisma schema.
+
+export type Profile = Prisma.ProfileGetPayload<{}>;
+
+export type Idea = Prisma.IdeaGetPayload<{}>;
+
+export type Evaluation = Prisma.EvaluationGetPayload<{}>;
+
+export type IdeaComment = Prisma.IdeaCommentGetPayload<{}>;
+
 export type Json =
   | string
   | number

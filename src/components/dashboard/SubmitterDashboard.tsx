@@ -1,67 +1,45 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { useMemo } from "react";
+import { Idea, Profile } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Lightbulb, Clock, CheckCircle, XCircle, TrendingUp } from "lucide-react";
 import { IdeaSubmissionForm } from "./IdeaSubmissionForm";
 import { IdeaCard } from "./IdeaCard";
 import { Session } from "next-auth";
 
-type Profile = Tables<"profiles">;
-type Idea = Tables<"ideas">;
+// type Profile = Tables<"profiles">;
+// type Idea = Tables<"ideas">;
 
 interface SubmitterDashboardProps {
   user: Session['user'];
   profile: Profile;
+  initialIdeas: Idea[];
   activeView: string;
 }
 
 // export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardProps) => {
-export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, profile, activeView }) => {
-  const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-  });
-  const [loading, setLoading] = useState(true);
+export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, profile, initialIdeas, activeView }) => {
+  // The ideas are now passed as props, no need for local state to hold them.
+  const ideas = initialIdeas;
 
-  const fetchUserIdeas = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("ideas")
-        .select("*")
-        .eq("submitter_id", user.id)
-        .order("created_at", { ascending: false });
+  // Calculate stats based on the initialIdeas prop.
+  // useMemo ensures this expensive calculation only runs when ideas change.
+  const stats = useMemo(() => {
+    return {
+      total: ideas.length,
+      pending: ideas.filter(idea => ["submitted", "under_review"].includes(idea.status)).length,
+      approved: ideas.filter(idea => idea.status === "approved").length,
+      rejected: ideas.filter(idea => idea.status === "rejected").length,
+    };
+  }, [ideas]);
 
-      if (error) throw error;
-
-      const ideasData = data || [];
-      setIdeas(ideasData);
-
-      const stats = {
-        total: ideasData.length,
-        pending: ideasData.filter(idea => ["submitted", "under_review"].includes(idea.status)).length,
-        approved: ideasData.filter(idea => idea.status === "approved").length,
-        rejected: ideasData.filter(idea => idea.status === "rejected").length,
-      };
-
-      setStats(stats);
-    } catch (error) {
-      console.error("Error fetching ideas:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user.id]);
-
-  useEffect(() => {
-    fetchUserIdeas();
-  }, [fetchUserIdeas]);
+  // After submitting an idea, we no longer need to fetch.
+  // The server action will revalidate the path, and Next.js will re-render with fresh data.
+  const handleIdeaSubmitted = () => {
+    // This function is kept for prop consistency but the main logic
+    // is now handled by server-side revalidation.
+  };
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">
@@ -115,13 +93,7 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
           <CardDescription>Your latest idea submissions</CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
-              ))}
-            </div>
-          ) : ideas.length > 0 ? (
+          {ideas.length > 0 ? (
             <div className="space-y-4">
               {ideas.slice(0, 5).map((idea) => (
                 <IdeaCard key={idea.id} idea={idea} />
@@ -146,13 +118,7 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
         <Badge variant="secondary">{ideas.length} total</Badge>
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-48 bg-gray-100 rounded-lg animate-pulse" />
-          ))}
-        </div>
-      ) : ideas.length > 0 ? (
+      {ideas.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {ideas.map((idea) => (
             <IdeaCard key={idea.id} idea={idea} detailed />
@@ -174,7 +140,7 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
 
   switch (activeView) {
     case "submit":
-      return <IdeaSubmissionForm profile={profile} onIdeaSubmitted={fetchUserIdeas} />;
+      return <IdeaSubmissionForm profile={profile} onIdeaSubmitted={handleIdeaSubmitted} />;
     case "my-ideas":
       return renderMyIdeas();
     case "ideas":

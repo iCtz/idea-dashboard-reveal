@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import type { Session } from "next-auth";
-// import { Tables } from "@/integrations/supabase/types";
-import { db } from "@/lib/db";
-import { Tables } from "@/lib/types";
+import { Tables, Idea, Profile, Evaluation } from "@/lib/types";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SubmitterDashboard } from "./SubmitterDashboard";
@@ -12,16 +10,24 @@ import { EvaluatorDashboard } from "./EvaluatorDashboard";
 import { ManagementDashboard } from "./ManagementDashboard";
 import { ProfileSetup } from "./ProfileSetup";
 
-type Profile = Tables<"profiles">;
+// type Profile = Tables<"profiles">;
 
 interface DashboardClientProps {
   user: Session["user"];
   profile: Profile | null;
+  ideas: Idea[];
+  evaluations: Evaluation[];
+  allIdeas: Idea[];
+  userCount: number;
 }
 
 export function DashboardClient({
   user,
   profile: initialProfile,
+  ideas,
+  evaluations,
+  allIdeas,
+  userCount,
 }: DashboardClientProps) {
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const [activeView, setActiveView] = useState("dashboard");
@@ -41,13 +47,42 @@ export function DashboardClient({
 
     switch (userRole) {
       case "submitter":
-        return <SubmitterDashboard user={user} activeView={activeView} />;
+        return (
+          <SubmitterDashboard
+            user={user}
+            profile={profile}
+            initialIdeas={ideas}
+            activeView={activeView}
+          />
+        );
       case "evaluator":
-        return <EvaluatorDashboard user={user} activeView={activeView} />;
+        return (
+          <EvaluatorDashboard
+            user={user}
+            profile={profile}
+            pendingIdeas={ideas}
+            evaluations={evaluations}
+            activeView={activeView}
+          />
+        );
       case "management":
-        return <ManagementDashboard user={user} activeView={activeView} />;
+        return (
+          <ManagementDashboard
+            user={user}
+            allIdeas={allIdeas}
+            userCount={userCount}
+            activeView={activeView}
+          />
+        );
       default:
-        return <SubmitterDashboard user={user} activeView={activeView} />;
+        return (
+          <SubmitterDashboard
+            user={user}
+            profile={profile}
+            initialIdeas={ideas}
+            activeView={activeView}
+          />
+        );
     }
   };
 
@@ -59,7 +94,7 @@ export function DashboardClient({
         onViewChange={setActiveView}
       />
       <div className="flex-1 flex flex-col overflow-y-auto">
-        <Header user={user} />
+        <Header profile={profile} />
         <main className="flex-1 p-6">{renderDashboardByRole()}</main>
       </div>
     </div>
