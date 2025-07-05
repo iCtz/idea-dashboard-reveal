@@ -34,7 +34,7 @@ npm i
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run
-npm install -g prisma
+npm install -g prisma bun
 prisma init
 # update the .env file with your database connection string as DATABASE_URL="postgresql://user:pass@localhost:5433/idea_dashboard?schema=public"
 # Step 5: Install the following libs if you haven't already.
@@ -52,6 +52,8 @@ npx prisma migrate dev --name "migration_name"
 npm run start
 # terminal2:
 npm run dev
+# and regularly do this
+npx update-browserslist-db@latest
 ```
 
 **Edit a file directly in GitHub**
