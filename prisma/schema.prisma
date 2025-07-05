@@ -12,6 +12,8 @@ enum UserRole {
   submitter
   evaluator
   management
+  ADMIN
+  USER
 }
 
 enum IdeaStatus {
@@ -36,6 +38,7 @@ model Profile {
   id           String     @id @db.Uuid
   email        String     @unique
   full_name    String?
+  name         String?
   password     String?    @db.Text // For local auth only
   role         UserRole   @default(submitter)
   department   String?

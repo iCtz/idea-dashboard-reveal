@@ -19,22 +19,24 @@ export default async function middleware(req: NextRequest) {
 
   // 2. Check authentication
   const session = await auth();
-  const isAuthenticated = !!session?.user;
 
   // 3. Handle public routes
   if (publicRoutes.includes(pathname)) {
-    if (isAuthenticated) {
+    // If the user is authenticated and on a public page, redirect to dashboard
+    if (session) {
       return NextResponse.redirect(new URL("/dashboard", nextUrl));
     }
     return NextResponse.next();
   }
 
   // 4. Protect private routes
-  if (!isAuthenticated) {
+  // If there's no session, redirect to login
+  if (!session) {
     return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
   // 5. Role-based access control (example)
+  // From here on, TypeScript knows `session` is not null.
   if (pathname.startsWith("/admin") && session.user.role !== "ADMIN") {
     return NextResponse.redirect(new URL("/unauthorized", nextUrl));
   }

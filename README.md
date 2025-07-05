@@ -36,8 +36,11 @@ npm i
 npm run
 npm install -g prisma
 prisma init
-# update the .env file with your database connection string
-# Step 5: Install the Prisma CLI globally if you haven't already.
+# update the .env file with your database connection string as DATABASE_URL="postgresql://user:pass@localhost:5433/idea_dashboard?schema=public"
+# Step 5: Install the following libs if you haven't already.
+npm install next-auth@beta @auth/supabase-adapter @supabase/supabase-js bcryptjs @types/bcryptjs @auth/prisma-adapter @prisma/client --save-dev @types/node
+# generate a secret key for your application. https://generate-secret.vercel.app/32
+# Add it to .env as AUTH_SECRET=your-secret-key
 # create or update the schema.prisma file with your database schema
 npx prisma generate
 # Step 5: Run the Prisma migrations to set up your database schema.

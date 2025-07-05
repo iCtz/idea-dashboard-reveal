@@ -18,7 +18,7 @@ export const authConfig = {
         if (validatedFields.success) {
           const { email, password } = validatedFields.data;
 
-          const user = await db.user.findUnique({
+          const user = await db.profile.findUnique({
             where: { email },
           });
 
@@ -39,16 +39,18 @@ export const authConfig = {
   session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token, user }) {
+      // The user object is only available on the first sign-in.
       if (user) {
         token.role = user.role;
-        token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      // The token object contains the data from the jwt callback.
+      // We add the user id (from token.sub) and role to the session object.
+      if (token.sub && session.user && token.role) {
+        session.user.id = token.sub;
         session.user.role = token.role;
-        session.user.id = token.id;
       }
       return session;
     },
