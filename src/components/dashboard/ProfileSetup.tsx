@@ -20,7 +20,7 @@ type ProfileSetupProps = {
 
 export const ProfileSetup = ({ user, onProfileUpdate }: ProfileSetupProps) => {
   const [loading, setLoading] = useState(false);
-  const [fullName, setFullName] = useState(user.user_metadata?.full_name || "");
+  const [fullName, setFullName] = useState(user.name || "");
   const [department, setDepartment] = useState("");
   const [role, setRole] = useState<"submitter" | "evaluator" | "management">("submitter");
   const { toast } = useToast();
@@ -34,7 +34,7 @@ export const ProfileSetup = ({ user, onProfileUpdate }: ProfileSetupProps) => {
         .from("profiles")
         .upsert({
           id: user.id,
-          email: user.email,
+          email: user.email!, // The user email is expected to exist in the session at this stage.
           full_name: fullName,
           department,
           role,

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,11 +27,8 @@ export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardPr
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUserIdeas();
-  }, [profile.id]);
-
-  const fetchUserIdeas = async () => {
+  const fetchUserIdeas = useCallback(async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("ideas")
@@ -41,22 +38,27 @@ export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardPr
 
       if (error) throw error;
 
-      setIdeas(data || []);
-      
+      const ideasData = data || [];
+      setIdeas(ideasData);
+
       const stats = {
-        total: data?.length || 0,
-        pending: data?.filter(idea => ["submitted", "under_review"].includes(idea.status)).length || 0,
-        approved: data?.filter(idea => idea.status === "approved").length || 0,
-        rejected: data?.filter(idea => idea.status === "rejected").length || 0,
+        total: ideasData.length,
+        pending: ideasData.filter(idea => ["submitted", "under_review"].includes(idea.status)).length,
+        approved: ideasData.filter(idea => idea.status === "approved").length,
+        rejected: ideasData.filter(idea => idea.status === "rejected").length,
       };
-      
+
       setStats(stats);
     } catch (error) {
       console.error("Error fetching ideas:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile.id]);
+
+  useEffect(() => {
+    fetchUserIdeas();
+  }, [fetchUserIdeas]);
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">
@@ -70,7 +72,7 @@ export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardPr
             <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Under Review</CardTitle>
@@ -80,7 +82,7 @@ export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardPr
             <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Approved</CardTitle>
@@ -90,7 +92,7 @@ export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardPr
             <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
@@ -140,7 +142,7 @@ export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardPr
         <h2 className="text-2xl font-bold">My Ideas</h2>
         <Badge variant="secondary">{ideas.length} total</Badge>
       </div>
-      
+
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (

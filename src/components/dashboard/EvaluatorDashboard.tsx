@@ -24,52 +24,53 @@ export const EvaluatorDashboard = ({ profile, activeView }: EvaluatorDashboardPr
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPendingIdeas();
-    fetchEvaluatorStats();
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        // Fetch pending ideas and this evaluator's past evaluations concurrently.
+        const [pendingIdeasResult, evaluationsResult] = await Promise.all([
+          supabase
+            .from("ideas")
+            .select("*")
+            .in("status", ["submitted", "under_review"])
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("evaluations")
+            .select("overall_score")
+            .eq("evaluator_id", profile.id),
+        ]);
+
+        if (pendingIdeasResult.error) throw pendingIdeasResult.error;
+        if (evaluationsResult.error) throw evaluationsResult.error;
+
+        const pendingIdeasData = pendingIdeasResult.data || [];
+        const evaluationsData = evaluationsResult.data || [];
+
+        setPendingIdeas(pendingIdeasData);
+
+        // Calculate stats based on the fetched data.
+        const avgScore =
+          evaluationsData.length > 0
+            ? evaluationsData.reduce((sum, e) => sum + (e.overall_score || 0), 0) / evaluationsData.length
+            : 0;
+
+        const topRated = evaluationsData.filter(e => (e.overall_score || 0) >= 8).length;
+
+        setStats({
+          pending: pendingIdeasData.length,
+          evaluated: evaluationsData.length,
+          avgScore: Math.round(avgScore * 10) / 10,
+          topRated,
+        });
+      } catch (error) {
+        console.error("Error fetching evaluator dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, [profile.id]);
-
-  const fetchPendingIdeas = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("ideas")
-        .select("*")
-        .in("status", ["submitted", "under_review"])
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setPendingIdeas(data || []);
-    } catch (error) {
-      console.error("Error fetching pending ideas:", error);
-    }
-  };
-
-  const fetchEvaluatorStats = async () => {
-    try {
-      const { data: evaluations, error } = await supabase
-        .from("evaluations")
-        .select("*")
-        .eq("evaluator_id", profile.id);
-
-      if (error) throw error;
-
-      const avgScore = evaluations?.length 
-        ? evaluations.reduce((sum, evaluation) => sum + (evaluation.overall_score || 0), 0) / evaluations.length
-        : 0;
-
-      const topRated = evaluations?.filter(evaluation => (evaluation.overall_score || 0) >= 8).length || 0;
-
-      setStats({
-        pending: pendingIdeas.length,
-        evaluated: evaluations?.length || 0,
-        avgScore: Math.round(avgScore * 10) / 10,
-        topRated,
-      });
-    } catch (error) {
-      console.error("Error fetching evaluator stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">

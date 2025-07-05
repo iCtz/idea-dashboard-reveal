@@ -1,17 +1,17 @@
 
-import { 
-  LayoutDashboard, 
-  Lightbulb, 
-  ClipboardCheck, 
-  BarChart3, 
-  Users, 
+import {
+  LayoutDashboard,
+  Lightbulb,
+  ClipboardCheck,
+  BarChart3,
+  Users,
   Settings,
   LogOut,
   Plus,
   Zap
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 
@@ -24,8 +24,8 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ profile, activeView, onViewChange }: SidebarProps) => {
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
+  const handleSignOut = () => {
+    signOut({ callbackUrl: "/" });
   };
 
   const getNavigationItems = () => {
@@ -81,7 +81,7 @@ export const Sidebar = ({ profile, activeView, onViewChange }: SidebarProps) => 
           )}
         </div>
       </div>
-      
+
       <nav className="flex-1 p-4 space-y-2">
         {navigationItems.map((item) => {
           const Icon = item.icon;
@@ -91,8 +91,8 @@ export const Sidebar = ({ profile, activeView, onViewChange }: SidebarProps) => 
               variant={activeView === item.id ? "default" : "ghost"}
               className={cn(
                 "w-full justify-start h-12 font-medium transition-all duration-200",
-                activeView === item.id 
-                  ? "bg-you-accent text-sidebar-foreground shadow-md border border-you-accent" 
+                activeView === item.id
+                  ? "bg-you-accent text-sidebar-foreground shadow-md border border-you-accent"
                   : "text-sidebar-foreground hover:bg-you-accent/30 hover:text-sidebar-foreground"
               )}
               onClick={() => onViewChange(item.id)}
@@ -103,11 +103,11 @@ export const Sidebar = ({ profile, activeView, onViewChange }: SidebarProps) => 
           );
         })}
       </nav>
-      
+
       <div className="p-4 border-t border-sidebar-border">
         <Button
           variant="ghost"
-          className="w-full justify-start h-12 text-red-500 hover:text-red-600 hover:bg-red-50 font-medium"
+          className="w-full justify-start h-12 text-red-500 hover:bg-red-500/10 hover:text-red-600 font-medium"
           onClick={handleSignOut}
         >
           <LogOut className="mr-3 h-5 w-5" />

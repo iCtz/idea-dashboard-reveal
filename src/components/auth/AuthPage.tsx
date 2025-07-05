@@ -1,6 +1,9 @@
+"use client";
 
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+// import { supabase } from "@/integrations/supabase/client";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,108 +17,66 @@ export const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [activeTab, setActiveTab] = useState("login");
   const { toast } = useToast();
+  const router = useRouter();
+
 
   // Test user accounts with roles
   const testUsers = [
-    { 
-      email: "submitter@you.com", 
-      name: "Hani Gazim", 
+    {
+      email: "submitter@you.com",
+      name: "Hani Gazim",
       role: "Submitter",
       userRole: "submitter" as const,
       id: "11111111-1111-1111-1111-111111111111"
     },
-    { 
-      email: "evaluator@you.com", 
-      name: "Abdurhman Alhakeem", 
+    {
+      email: "evaluator@you.com",
+      name: "Abdurhman Alhakeem",
       role: "Evaluator",
       userRole: "evaluator" as const,
       id: "22222222-2222-2222-2222-222222222222"
     },
-    { 
-      email: "management@you.com", 
-      name: "Osama Murshed", 
+    {
+      email: "management@you.com",
+      name: "Osama Murshed",
       role: "Management",
       userRole: "management" as const,
       id: "33333333-3333-3333-3333-333333333333"
     },
-    { 
-      email: "test@you.com", 
-      name: "Test User", 
+    {
+      email: "test@you.com",
+      name: "Test User",
       role: "Admin",
       userRole: "management" as const,
       id: "44444444-4444-4444-4444-444444444444"
     },
   ];
 
-  const createTestProfile = async (user: typeof testUsers[0]) => {
-    try {
-      // Check if profile already exists
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .single();
-
-      if (!existingProfile) {
-        // Create profile if it doesn't exist - removed email_confirmed field
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert({
-            id: user.id,
-            email: user.email,
-            full_name: user.name,
-            role: user.userRole,
-            department: user.role === "Management" ? "Executive" : user.role === "Evaluator" ? "R&D" : "Operations"
-          });
-
-        if (profileError) {
-          console.error("Profile creation error:", profileError);
-        }
-      }
-    } catch (error) {
-      console.error("Error creating test profile:", error);
-    }
-  };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: fullName,
-          },
-        },
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, fullName }),
       });
 
-      if (error) throw error;
-
-      // Auto-confirm email for testing by attempting to sign in immediately
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (!signInError) {
-        toast({
-          title: "Account Created & Signed In!",
-          description: "Welcome to YOU Innovation Hub",
-        });
-      } else {
-        toast({
-          title: "Account Created!",
-          description: "Please check your email for confirmation (if required).",
-        });
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || "Failed to create account.");
       }
+
+      toast({
+        title: "Account Created",
+        description: "You can now log in with your new credentials.",
+      });
+      setActiveTab("login"); // Switch to login tab on success
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Registration Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -127,18 +88,28 @@ export const AuthPage = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const result = await signIn("credentials", {
+        redirect: false,
         email,
         password,
       });
 
-      if (error) throw error;
-    } catch (error: any) {
+      if (result?.error) {
+        toast({
+          title: "Login Failed",
+          description: result.error,
+          variant: "destructive",
+        });
+      } else {
+        // Successful login, refresh the page to update the session state
+        // and trigger the server component to re-render.
+        router.refresh();
+      }
+    } catch (error) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "An unexpected error occurred.",
+        description: "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -149,60 +120,27 @@ export const AuthPage = () => {
   const handleTestLogin = async (testUser: typeof testUsers[0]) => {
     setLoading(true);
     try {
-      console.log(`Attempting login for ${testUser.name} (${testUser.email})`);
-      
-      // First create the test profile
-      await createTestProfile(testUser);
-
-      // Try to sign in directly
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      // This function now uses the NextAuth credentials provider.
+      // It assumes the test users exist in your local database with the password "Abdu123+++".
+      const result = await signIn("credentials", {
+        redirect: false,
         email: testUser.email,
         password: "Abdu123+++",
       });
 
-      if (signInError) {
-        console.log("Sign in failed, attempting to create account:", signInError.message);
-        
-        // If sign in fails, create the account first
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: testUser.email,
-          password: "Abdu123+++",
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              full_name: testUser.name,
-            },
-          },
-        });
-
-        if (signUpError && !signUpError.message.includes('already registered')) {
-          throw signUpError;
-        }
-
-        // Wait a moment then try to sign in again
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const { error: secondSignInError } = await supabase.auth.signInWithPassword({
-          email: testUser.email,
-          password: "Abdu123+++",
-        });
-
-        if (secondSignInError) {
-          console.error("Second sign in failed:", secondSignInError);
-          throw new Error(`Login failed: ${secondSignInError.message}`);
-        }
+      if (result?.error) {
+        throw new Error(result.error);
       }
-      
-      console.log("Login successful for", testUser.name);
+
       toast({
         title: "Login Successful",
         description: `Logged in as ${testUser.name} (${testUser.role})`,
       });
+      router.refresh();
     } catch (error: any) {
-      console.error("Login error:", error);
       toast({
-        title: "Login Error",
-        description: error.message || "Failed to login. Please try again.",
+        title: "Test Login Error",
+        description: error.message || "Failed to login. Ensure test users are in the database.",
         variant: "destructive",
       });
     } finally {
@@ -211,64 +149,9 @@ export const AuthPage = () => {
   };
 
   const handleQuickAccess = async () => {
-    setLoading(true);
-    try {
-      // Create test user profile first
-      const testUser = testUsers.find(u => u.email === "test@you.com")!;
-      await createTestProfile(testUser);
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: "test@you.com",
-        password: "Abdu123+++",
-      });
-
-      if (signInError) {
-        // If sign in fails, create the account
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: "test@you.com",
-          password: "Abdu123+++",
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              full_name: "Test User",
-            },
-          },
-        });
-
-        if (signUpError && !signUpError.message.includes('already registered')) {
-          throw signUpError;
-        }
-
-        // Create the profile manually
-        await createTestProfile(testUser);
-
-        // Wait and try signing in again
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const { error: secondSignInError } = await supabase.auth.signInWithPassword({
-          email: "test@you.com",
-          password: "Abdu123+++",
-        });
-
-        if (secondSignInError) {
-          throw new Error("Account created but login failed. Please try again.");
-        }
-      }
-      
-      toast({
-        title: "Quick Access Successful",
-        description: "Logged in successfully",
-      });
-    } catch (error: any) {
-      console.error("Quick access error:", error);
-      toast({
-        title: "Quick Access Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Re-purposing this button to use the primary test user.
+    const testUser = testUsers.find(u => u.email === "test@you.com")!;
+    await handleTestLogin(testUser);
   };
 
   return (
@@ -289,7 +172,7 @@ export const AuthPage = () => {
               Transform ideas into reality with our comprehensive innovation management platform
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-4">
             <div className="flex items-center space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm">
               <div className="p-2 bg-you-orange rounded-lg">
@@ -300,7 +183,7 @@ export const AuthPage = () => {
                 <p className="text-sm text-gray-600">Share innovative thoughts and monitor progress</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm">
               <div className="p-2 bg-you-green rounded-lg">
                 <Users className="h-6 w-6 text-white" />
@@ -310,7 +193,7 @@ export const AuthPage = () => {
                 <p className="text-sm text-gray-600">Expert review and strategic alignment assessment</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm">
               <div className="p-2 bg-you-blue rounded-lg">
                 <BarChart3 className="h-6 w-6 text-white" />
@@ -332,13 +215,13 @@ export const AuthPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin" className="font-medium">Sign In</TabsTrigger>
+                <TabsTrigger value="login" className="font-medium">Sign In</TabsTrigger>
                 <TabsTrigger value="signup" className="font-medium">Sign Up</TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="signin" className="space-y-4">
+
+              <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="font-medium">Email</Label>
@@ -400,8 +283,8 @@ export const AuthPage = () => {
                       >
                         <div className="flex items-center space-x-3">
                           <div className={`w-3 h-3 rounded-full ${
-                            user.role === 'Submitter' ? 'bg-you-blue' : 
-                            user.role === 'Evaluator' ? 'bg-you-green' : 
+                            user.role === 'Submitter' ? 'bg-you-blue' :
+                            user.role === 'Evaluator' ? 'bg-you-green' :
                             user.role === 'Management' ? 'bg-you-orange' : 'bg-you-purple'
                           }`}></div>
                           <div>
@@ -420,7 +303,7 @@ export const AuthPage = () => {
                   </div>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="signup" className="space-y-4">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">

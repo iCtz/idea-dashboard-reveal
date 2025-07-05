@@ -1,3 +1,4 @@
+"use client";
 
 import { useEffect, useState } from "react";
 // import { User } from "@supabase/supabase-js";
@@ -25,41 +26,45 @@ export function Dashboard({ user }: DashboardProps) {
   const [activeView, setActiveView] = useState("dashboard");
   const { toast } = useToast();
 
-  // useEffect(() => {
-  //   fetchProfile();
-  // }, [user.id]);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      // The loading state is set to true at the beginning of the fetch.
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
 
-  const fetchProfile = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+        // PGRST116 means no rows were found, which is a valid state for a new user.
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
 
-      if (error && error.code !== "PGRST116") {
-        throw error;
+        setProfile(data);
+
+        // Seed sample data if this is a test user and profile exists
+        if (data && data.role) {
+          setTimeout(() => {
+            seedSampleData();
+          }, 1000);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile",
+          variant: "destructive",
+        });
+      } finally {
+        // The loading state is set to false after the fetch completes.
+        setLoading(false);
       }
+    };
 
-      setProfile(data);
-
-      // Seed sample data if this is a test user and profile exists
-      if (data && data.role) {
-        setTimeout(() => {
-          seedSampleData();
-        }, 1000);
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchProfile();
+  }, [user.id, toast]);
 
   const handleProfileUpdate = (updatedProfile: Profile) => {
     setProfile(updatedProfile);

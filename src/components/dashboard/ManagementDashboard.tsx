@@ -14,6 +14,16 @@ interface ManagementDashboardProps {
   activeView: string;
 }
 
+type CategoryChartData = {
+  name: string;
+  value: number;
+};
+
+type StatusChartData = {
+  name: string;
+  count: number;
+};
+
 export const ManagementDashboard = ({ profile, activeView }: ManagementDashboardProps) => {
   const [stats, setStats] = useState({
     totalIdeas: 0,
@@ -23,93 +33,70 @@ export const ManagementDashboard = ({ profile, activeView }: ManagementDashboard
     successRate: 0,
     avgTimeToImplement: 0,
   });
-  const [categoryData, setCategoryData] = useState<any[]>([]);
-  const [statusData, setStatusData] = useState<any[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryChartData[]>([]);
+  const [statusData, setStatusData] = useState<StatusChartData[]>([]);
   const [loading, setLoading] = useState(true);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   useEffect(() => {
-    fetchManagementStats();
-    fetchCategoryData();
-    fetchStatusData();
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        // Fetch all ideas and profiles in parallel with a single call for each table.
+        const [ideasResult, usersResult] = await Promise.all([
+          supabase.from("ideas").select("status,category"),
+          supabase.from("profiles").select("id", { count: "exact", head: true }),
+        ]);
+
+        if (ideasResult.error) throw ideasResult.error;
+        if (usersResult.error) throw usersResult.error;
+
+        const ideas = ideasResult.data || [];
+        const totalUsers = usersResult.count || 0;
+
+        // --- Process data for stats and charts ---
+
+        // Calculate main stats
+        const implementedIdeas = ideas.filter(idea => idea.status === "implemented").length;
+        const activeIdeas = ideas.filter(idea => ["submitted", "under_review", "approved"].includes(idea.status)).length;
+        setStats({
+          totalIdeas: ideas.length,
+          totalUsers: totalUsers,
+          activeIdeas: activeIdeas,
+          implementedIdeas: implementedIdeas,
+          successRate: ideas.length > 0 ? Math.round((implementedIdeas / ideas.length) * 100) : 0,
+          avgTimeToImplement: 30, // Placeholder
+        });
+
+        // Process data for charts
+        const categoryCount = ideas.reduce((acc: Record<string, number>, idea) => {
+          if (idea.category) {
+            acc[idea.category] = (acc[idea.category] || 0) + 1;
+          }
+          return acc;
+        }, {});
+        const categoryChartData = Object.entries(categoryCount).map(([name, value]) => ({ name: name.replace(/_/g, " "), value }));
+        setCategoryData(categoryChartData);
+
+        const statusCount = ideas.reduce((acc: Record<string, number>, idea) => {
+          if (idea.status) {
+            acc[idea.status] = (acc[idea.status] || 0) + 1;
+          }
+          return acc;
+        }, {});
+        const statusChartData = Object.entries(statusCount).map(([name, count]) => ({ name: name.replace(/_/g, " "), count }));
+        setStatusData(statusChartData);
+
+      } catch (error) {
+        console.error("Error fetching management dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
-
-  const fetchManagementStats = async () => {
-    try {
-      const [ideasResult, usersResult] = await Promise.all([
-        supabase.from("ideas").select("*"),
-        supabase.from("profiles").select("*")
-      ]);
-
-      const ideas = ideasResult.data || [];
-      const users = usersResult.data || [];
-
-      const implementedIdeas = ideas.filter(idea => idea.status === "implemented");
-      const activeIdeas = ideas.filter(idea => ["submitted", "under_review", "approved"].includes(idea.status));
-
-      setStats({
-        totalIdeas: ideas.length,
-        totalUsers: users.length,
-        activeIdeas: activeIdeas.length,
-        implementedIdeas: implementedIdeas.length,
-        successRate: ideas.length > 0 ? Math.round((implementedIdeas.length / ideas.length) * 100) : 0,
-        avgTimeToImplement: 30, // Placeholder - would calculate from actual data
-      });
-    } catch (error) {
-      console.error("Error fetching management stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCategoryData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("ideas")
-        .select("category");
-
-      if (error) throw error;
-
-      const categoryCount = data?.reduce((acc: any, idea) => {
-        acc[idea.category] = (acc[idea.category] || 0) + 1;
-        return acc;
-      }, {});
-
-      const chartData = Object.entries(categoryCount || {}).map(([category, count]) => ({
-        name: category.replace("_", " "),
-        value: count,
-      }));
-
-      setCategoryData(chartData);
-    } catch (error) {
-      console.error("Error fetching category data:", error);
-    }
-  };
-
-  const fetchStatusData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("ideas")
-        .select("status");
-
-      if (error) throw error;
-
-      const statusCount = data?.reduce((acc: any, idea) => {
-        acc[idea.status] = (acc[idea.status] || 0) + 1;
-        return acc;
-      }, {});
-
-      const chartData = Object.entries(statusCount || {}).map(([status, count]) => ({
-        name: status.replace("_", " "),
-        count: count,
-      }));
-
-      setStatusData(chartData);
-    } catch (error) {
-      console.error("Error fetching status data:", error);
-    }
-  };
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">
