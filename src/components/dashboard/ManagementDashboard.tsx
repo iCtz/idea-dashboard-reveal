@@ -1,13 +1,10 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { useMemo } from "react";
+import { Idea, Profile } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Users, Lightbulb, CheckCircle, Clock, Target } from "lucide-react";
-
-type Profile = Tables<"profiles">;
-type Idea = Tables<"ideas">;
 
 interface ManagementDashboardProps {
   profile: Profile;
@@ -24,7 +21,8 @@ type StatusChartData = {
   count: number;
 };
 
-export const ManagementDashboard = ({ profile, activeView }: ManagementDashboardProps) => {
+// export const ManagementDashboard = ({ profile, activeView }: ManagementDashboardProps) => {
+export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, activeView }) => {
   const [stats, setStats] = useState({
     totalIdeas: 0,
     totalUsers: 0,
@@ -37,66 +35,50 @@ export const ManagementDashboard = ({ profile, activeView }: ManagementDashboard
   const [statusData, setStatusData] = useState<StatusChartData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF6F61', '#6B5B95', '#88B04B', '#F7CAC9'];
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      try {
-        // Fetch all ideas and profiles in parallel with a single call for each table.
-        const [ideasResult, usersResult] = await Promise.all([
-          supabase.from("ideas").select("status,category"),
-          supabase.from("profiles").select("id", { count: "exact", head: true }),
-        ]);
+  // Destructure props and provide default values if necessary
+  const { allIdeas = [], userCount = 0 } = props;
 
-        if (ideasResult.error) throw ideasResult.error;
-        if (usersResult.error) throw usersResult.error;
+  const data = useMemo(() => {
+    // Calculate main stats
+    const implementedIdeas = allIdeas.filter(idea => idea.status === "implemented").length;
+    const activeIdeas = allIdeas.filter(idea => ["submitted", "under_review", "approved"].includes(idea.status)).length;
 
-        const ideas = ideasResult.data || [];
-        const totalUsers = usersResult.count || 0;
-
-        // --- Process data for stats and charts ---
-
-        // Calculate main stats
-        const implementedIdeas = ideas.filter(idea => idea.status === "implemented").length;
-        const activeIdeas = ideas.filter(idea => ["submitted", "under_review", "approved"].includes(idea.status)).length;
-        setStats({
-          totalIdeas: ideas.length,
-          totalUsers: totalUsers,
-          activeIdeas: activeIdeas,
-          implementedIdeas: implementedIdeas,
-          successRate: ideas.length > 0 ? Math.round((implementedIdeas / ideas.length) * 100) : 0,
-          avgTimeToImplement: 30, // Placeholder
-        });
-
-        // Process data for charts
-        const categoryCount = ideas.reduce((acc: Record<string, number>, idea) => {
-          if (idea.category) {
-            acc[idea.category] = (acc[idea.category] || 0) + 1;
-          }
-          return acc;
-        }, {});
-        const categoryChartData = Object.entries(categoryCount).map(([name, value]) => ({ name: name.replace(/_/g, " "), value }));
-        setCategoryData(categoryChartData);
-
-        const statusCount = ideas.reduce((acc: Record<string, number>, idea) => {
-          if (idea.status) {
-            acc[idea.status] = (acc[idea.status] || 0) + 1;
-          }
-          return acc;
-        }, {});
-        const statusChartData = Object.entries(statusCount).map(([name, count]) => ({ name: name.replace(/_/g, " "), count }));
-        setStatusData(statusChartData);
-
-      } catch (error) {
-        console.error("Error fetching management dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
+    const calculatedStats = {
+      totalIdeas: allIdeas.length,
+      totalUsers: userCount,
+      activeIdeas: activeIdeas,
+      implementedIdeas: implementedIdeas,
+      successRate: allIdeas.length > 0 ? Math.round((implementedIdeas / allIdeas.length) * 100) : 0,
+      avgTimeToImplement: 30, // Placeholder
     };
 
-    fetchDashboardData();
-  }, []);
+    // Process data for charts
+    const categoryCount = allIdeas.reduce((acc: Record<string, number>, idea) => {
+      if (idea.category) {
+        acc[idea.category] = (acc[idea.category] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    const categoryChartData = Object.entries(categoryCount).map(([name, value]) => ({ name: name.replace(/_/g, " "), value }))
+
+    const statusCount = allIdeas.reduce((acc: Record<string, number>, idea) => {
+      if (idea.status) {
+        acc[idea.status] = (acc[idea.status] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    const statusChartData = Object.entries(statusCount).map(([name, count]) => ({ name: name.replace(/_/g, " "), count }));
+
+    return {
+      stats: calculatedStats,
+      categoryData: categoryChartData,
+      statusData: statusChartData,
+    };
+  }, [allIdeas, userCount]);
+  // Directly use the memoized data
+  const { stats, categoryData, statusData } = data;
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">
@@ -171,7 +153,7 @@ export const ManagementDashboard = ({ profile, activeView }: ManagementDashboard
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={statusData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
@@ -200,7 +182,7 @@ export const ManagementDashboard = ({ profile, activeView }: ManagementDashboard
                   dataKey="value"
                 >
                   {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeOpacity={0.5}/>
                   ))}
                 </Pie>
                 <Tooltip />

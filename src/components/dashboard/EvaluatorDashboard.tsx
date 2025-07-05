@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { Session } from "next-auth";
+import { useMemo } from "react";
+import { Idea, Profile, Evaluation } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Star, TrendingUp, Users } from "lucide-react";
 
-type Profile = Tables<"profiles">;
-type Idea = Tables<"ideas">;
-
 interface EvaluatorDashboardProps {
+  user: Session["user"];
   profile: Profile;
+  pendingIdeas: Idea[];
+  evaluations: Evaluation[];
   activeView: string;
 }
 
@@ -18,59 +19,29 @@ export const EvaluatorDashboard = ({ profile, activeView }: EvaluatorDashboardPr
   const [stats, setStats] = useState({
     pending: 0,
     evaluated: 0,
-    avgScore: 0,
+    avgScore: 0 as number,
     topRated: 0,
   });
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      try {
-        // Fetch pending ideas and this evaluator's past evaluations concurrently.
-        const [pendingIdeasResult, evaluationsResult] = await Promise.all([
-          supabase
-            .from("ideas")
-            .select("*")
-            .in("status", ["submitted", "under_review"])
-            .order("created_at", { ascending: false }),
-          supabase
-            .from("evaluations")
-            .select("overall_score")
-            .eq("evaluator_id", profile.id),
-        ]);
+  const stats = useMemo(() => {
+    const avgScore =
+      evaluations.length > 0
+        ? evaluations.reduce((sum, e) => sum + (e.overall_score || 0), 0) /
+          evaluations.length
+        : 0;
 
-        if (pendingIdeasResult.error) throw pendingIdeasResult.error;
-        if (evaluationsResult.error) throw evaluationsResult.error;
+    const topRated = evaluations.filter((e) => (e.overall_score || 0) >= 8)
+      .length;
 
-        const pendingIdeasData = pendingIdeasResult.data || [];
-        const evaluationsData = evaluationsResult.data || [];
 
-        setPendingIdeas(pendingIdeasData);
-
-        // Calculate stats based on the fetched data.
-        const avgScore =
-          evaluationsData.length > 0
-            ? evaluationsData.reduce((sum, e) => sum + (e.overall_score || 0), 0) / evaluationsData.length
-            : 0;
-
-        const topRated = evaluationsData.filter(e => (e.overall_score || 0) >= 8).length;
-
-        setStats({
-          pending: pendingIdeasData.length,
-          evaluated: evaluationsData.length,
-          avgScore: Math.round(avgScore * 10) / 10,
-          topRated,
-        });
-      } catch (error) {
-        console.error("Error fetching evaluator dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
+    return {
+      pending: pendingIdeas.length,
+      evaluated: evaluations.length,
+      avgScore: Math.round(avgScore * 10) / 10,
+      topRated,
     };
 
-    fetchDashboardData();
-  }, [profile.id]);
+  }, [pendingIdeas, evaluations]);
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">
@@ -121,8 +92,8 @@ export const EvaluatorDashboard = ({ profile, activeView }: EvaluatorDashboardPr
           <CardTitle>Pending Evaluations</CardTitle>
           <CardDescription>Ideas waiting for your review</CardDescription>
         </CardHeader>
-        <CardContent>
-          {loading ? (
+        <CardContent className="pt-2">
+          {pendingIdeas.length > 0 ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
@@ -131,7 +102,7 @@ export const EvaluatorDashboard = ({ profile, activeView }: EvaluatorDashboardPr
           ) : pendingIdeas.length > 0 ? (
             <div className="space-y-4">
               {pendingIdeas.slice(0, 5).map((idea) => (
-                <div key={idea.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                <div key={idea.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
                   <div className="flex-1">
                     <h3 className="font-medium">{idea.title}</h3>
                     <p className="text-sm text-gray-600 line-clamp-1">{idea.description}</p>
@@ -147,10 +118,10 @@ export const EvaluatorDashboard = ({ profile, activeView }: EvaluatorDashboardPr
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
+            <div className="text-center py-6">
               <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No pending evaluations</h3>
-              <p className="mt-1 text-sm text-gray-500">All ideas have been reviewed.</p>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No pending ideas</h3>
+              <p className="mt-1 text-sm text-gray-500">You've evaluated all the submitted ideas.</p>
             </div>
           )}
         </CardContent>
