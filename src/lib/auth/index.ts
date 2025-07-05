@@ -4,7 +4,7 @@ export * from "./schemas";
 export * from "./types";
 
 // Helper functions
-import { auth } from "@/auth";
+import { auth } from "@/../auth";
 import { UserRole } from "@prisma/client";
 
 export const getCurrentUser = async () => {

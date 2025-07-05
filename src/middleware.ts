@@ -1,9 +1,9 @@
-import { auth } from "@/auth";
+import { auth } from "@/../auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // List of public routes
-const publicRoutes = ["/login", "/register", "/api/public"];
+const publicRoutes = ["/", "/login", "/register", "/api/public"];
 
 // List of auth API routes
 const authRoutes = ["/api/auth"];
