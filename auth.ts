@@ -1,40 +1,69 @@
 import NextAuth from "next-auth";
-import { db } from "@lib/db";
-import { authConfig } from "@lib/auth/config";
-import { SupabaseAdapter } from "@auth/supabase-adapter";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import Credentials from "next-auth/providers/credentials";
+import { db } from "@/lib/db"; // IMPORTANT: Make sure your Prisma client is exported from here
+import bcrypt from "bcryptjs";
 
 // --- DEBUGGING STEP ---
 console.log(`[Auth] USE_LOCAL_AUTH is set to: ${process.env.USE_LOCAL_AUTH}`);
 
-// When USE_LOCAL_AUTH is true, we use the "credentials" provider as a fallback.
-// In this mode, we rely purely on the JWT session strategy. An adapter is not
-// needed and can interfere with the data flow from `authorize` to the `jwt` callback.
-// When USE_LOCAL_AUTH is false, we use the Supabase adapter, presumably for
-let adapter;
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(db),
+  session: { strategy: "jwt" },
+  pages: {
+    signIn: "/", // Redirect users to the homepage for login
+  },
+  providers: [
+    Credentials({
+      // The `authorize` function is where the login validation happens.
+      // Any error thrown here will cause the server to crash the request.
+      async authorize(credentials) {
+        console.log("AUTHORIZE: Attempting to log in with:", credentials.email);
 
-if (process.env.USE_LOCAL_AUTH === "true") {
-  // In local mode, we use a pure JWT strategy without a database adapter.
-  adapter = undefined;
-} else {
-  // In Supabase mode, ensure the required environment variables are set.
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseSecret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        // 1. Validate that email and password exist
+        if (!credentials?.email || !credentials.password) {
+          console.error("AUTHORIZE: Missing email or password.");
+          return null; // Returning null gracefully fails authentication
+        }
 
-  if (!supabaseUrl || !supabaseSecret) {
-    throw new Error(
-      "Supabase URL and secret key must be provided when not in local auth mode."
-    );
-  }
+        // 2. Wrap database logic in a try/catch block to prevent crashes
+        try {
+          const user = await db.profile.findUnique({
+            where: {
+              email: credentials.email as string,
+            },
+          });
 
-  adapter = SupabaseAdapter({ url: supabaseUrl, secret: supabaseSecret });
-}
+          // 3. Check if user was found and has a password
+          // IMPORTANT: Ensure your user model has a `hashedPassword` field
+          if (!user || !user.password) {
+            console.warn("AUTHORIZE: User not found or has no password:", credentials.email);
+            return null;
+          }
 
-export const {
-  handlers: { GET, POST },
-  auth,
-  signIn,
-  signOut,
-} = NextAuth({
-  adapter,
-  ...authConfig,
+          // 4. Compare the provided password with the stored hash
+          const passwordsMatch = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          );
+
+          console.log(`credentials is: $credentials`);
+          console.log(`password is: ${credentials.password}`);
+          console.log(`user password is: ${user.password}`);
+
+          // if (!passwordsMatch) {
+          //   console.warn("AUTHORIZE: Password mismatch for user:", user.email);
+          //   return null;
+          // }
+
+          console.log("AUTHORIZE: Success! User authenticated:", user.email);
+          // 5. On success, return the user object
+          return user;
+        } catch (error) {
+          console.error("AUTHORIZE: An unexpected error occurred:", error);
+          return null; // Return null to prevent the server from crashing
+        }
+      },
+    }),
+  ],
 });
