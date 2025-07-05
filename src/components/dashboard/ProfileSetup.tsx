@@ -1,6 +1,7 @@
 
 import { useState } from "react";
-import { User } from "@supabase/supabase-js";
+// import { User } from "@supabase/supabase-js";
+import type { Session } from "next-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +13,8 @@ import { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
 
-interface ProfileSetupProps {
-  user: User;
+type ProfileSetupProps = {
+  user: Session["user"];
   onProfileUpdate: (profile: Profile) => void;
 }
 
@@ -83,7 +84,7 @@ export const ProfileSetup = ({ user, onProfileUpdate }: ProfileSetupProps) => {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
               <Input
@@ -94,7 +95,7 @@ export const ProfileSetup = ({ user, onProfileUpdate }: ProfileSetupProps) => {
                 onChange={(e) => setDepartment(e.target.value)}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
               <Select value={role} onValueChange={(value: "submitter" | "evaluator" | "management") => setRole(value)}>
@@ -108,7 +109,7 @@ export const ProfileSetup = ({ user, onProfileUpdate }: ProfileSetupProps) => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Setting up..." : "Complete Setup"}
             </Button>

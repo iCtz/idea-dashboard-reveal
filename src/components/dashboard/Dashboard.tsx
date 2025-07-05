@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
-import { User } from "@supabase/supabase-js";
+// import { User } from "@supabase/supabase-js";
+import type { Session } from "next-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Sidebar } from "./Sidebar";
@@ -14,19 +15,19 @@ import { seedSampleData } from "@/utils/sampleDataSeeder";
 
 type Profile = Tables<"profiles">;
 
-interface DashboardProps {
-  user: User;
+type DashboardProps = {
+  user: Session["user"];
 }
 
-export const Dashboard = ({ user }: DashboardProps) => {
+export function Dashboard({ user }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState("dashboard");
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchProfile();
-  }, [user.id]);
+  // useEffect(() => {
+  //   fetchProfile();
+  // }, [user.id]);
 
   const fetchProfile = async () => {
     try {
@@ -91,10 +92,10 @@ export const Dashboard = ({ user }: DashboardProps) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar 
-        profile={profile} 
-        activeView={activeView} 
-        onViewChange={setActiveView} 
+      <Sidebar
+        profile={profile}
+        activeView={activeView}
+        onViewChange={setActiveView}
       />
       <div className="flex-1 flex flex-col">
         <Header profile={profile} />
