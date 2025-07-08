@@ -1,3 +1,4 @@
+"use client";
 
 import { useTransition, useRef } from "react";
 import { Profile } from "@/types/types";

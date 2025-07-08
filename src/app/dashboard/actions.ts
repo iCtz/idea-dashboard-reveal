@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-// import { db } from "@/lib/db";
 import { getDatabase } from "@/database";
+import { container } from "@/lib/inversify.config";
+import { IdeaService } from "@/services/IdeaService";
+import { TYPES } from "@/types/dbtypes";
 
 interface UpdateProfilePayload {
   id: string;
@@ -15,21 +17,6 @@ interface UpdateProfilePayload {
 export async function updateProfile(payload: UpdateProfilePayload) {
   const database = getDatabase();
   try {
-    // await db.profile.upsert({
-    //   where: { id: payload.id },
-    //   update: {
-    //     full_name: payload.fullName,
-    //     department: payload.department,
-    //     role: payload.role,
-    //   },
-    //   create: {
-    //     id: payload.id,
-    //     email: payload.email,
-    //     full_name: payload.fullName,
-    //     department: payload.department,
-    //     role: payload.role,
-    //   },
-    // });
     const { id, ...data } = payload;
 
     // Check if the profile exists
@@ -37,10 +24,20 @@ export async function updateProfile(payload: UpdateProfilePayload) {
 
     if (existingProfile) {
       // If the profile exists, update it
-      await database.update("Profile", id, data);
+      await database.update("Profile", { id }, {
+        full_name: payload.fullName,
+        department: payload.department,
+        role: payload.role,
+      });
     } else {
       // If the profile doesn't exist, create it
-      await database.insert("Profile", { id, ...data });
+      await database.create("Profile", {
+        id: payload.id,
+        email: payload.email,
+        full_name: payload.fullName,
+        department: payload.department,
+        role: payload.role,
+      });
     }
 
     // Revalidate the path to ensure the UI updates with the new profile info.
@@ -61,21 +58,10 @@ export async function createIdea(payload: {
   strategicAlignmentScore: number | null;
 }) {
   try {
-    // await db.idea.create({
-    const database = getDatabase();
-
-    const data = {
-        title: payload.title,
-        description: payload.description,
-        category: payload.category,
-        submitter_id: payload.submitterId,
-        implementation_cost: payload.implementationCost,
-        expected_roi: payload.expectedRoi,
-        strategic_alignment_score: payload.strategicAlignmentScore,
-        status: "submitted", // Default status on creation
-      };
-    // });
-    await database.insert("Idea", data);
+    // Resolve the IdeaService from the container
+    const ideaService = container.get<IdeaService>(TYPES.IdeaService);
+    // Delegate the creation logic to the service
+    await ideaService.createIdea(payload);
 
     revalidatePath("/dashboard");
   } catch (error) {

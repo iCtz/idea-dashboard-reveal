@@ -53,12 +53,14 @@ export function ProfileSetup({ user, onProfileUpdate }: ProfileSetupProps) {
         // for a more immediate client-side state update if desired.
         onProfileUpdate({
           id: user.id!,
-          name: user.name || null,
           email: user.email!,
-          full_name: fullName || null,
+          name: user.name || null,
+          full_name: fullName,
+          // full_name: fullName || null,
           password: null, // Password is not set here
           department: department || null,
-          role: user.role as UserRole || role,
+          role: role,
+          // role: user.role as UserRole || role,
           // This is a client-side approximation for an immediate UI update.
           // The server-side revalidation will provide the canonical data.
           created_at: new Date(),
