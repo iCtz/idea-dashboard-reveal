@@ -23,10 +23,7 @@ export const Header = ({ profile }: HeaderProps) => {
       .map((word) => word.charAt(0))
       .join("")
       .toUpperCase()
-      .slice(0, 2);
       .slice(0, 2) || "U";
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   const getRoleColor = (role: string) => {
