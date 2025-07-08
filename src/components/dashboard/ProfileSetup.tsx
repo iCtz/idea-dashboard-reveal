@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import type { Session } from "next-auth";
-import type { Profile } from "@/lib/types";
+import type { Profile } from "@/types/types";
 import { updateProfile } from "@/app/dashboard/actions";
 import { UserRole } from "@prisma/client";
 

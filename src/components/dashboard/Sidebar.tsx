@@ -13,7 +13,7 @@ import {
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Profile } from "@/lib/types";
+import { Profile } from "@/types/types";
 
 interface SidebarProps {
   profile: Profile;

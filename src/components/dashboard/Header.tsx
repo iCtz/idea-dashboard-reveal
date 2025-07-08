@@ -3,7 +3,7 @@ import { Search, Bell, Filter, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Profile } from "@/lib/types";
+import { Profile } from "@/types/types";
 
 interface HeaderProps {
   profile: Profile;

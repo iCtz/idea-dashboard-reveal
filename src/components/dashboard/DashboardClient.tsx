@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Session } from "next-auth";
-import { Idea, Profile, Evaluation } from "@/lib/types";
+import { Idea, Profile, Evaluation } from "@/types/types";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SubmitterDashboard } from "./SubmitterDashboard";

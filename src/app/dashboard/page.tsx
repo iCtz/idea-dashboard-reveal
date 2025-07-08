@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/../auth";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { db } from "@/lib/db";
-import { Idea, Profile, Evaluation } from "@/lib/types";
+import { Idea, Profile, Evaluation } from "@/types/types";
 
 /**
  * This is the main secure entry point for the dashboard.
