@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { db } from "@/lib/db";
+// import { db } from "@/lib/db";
+import { getDatabase } from "@/database";
 
 interface UpdateProfilePayload {
   id: string;
@@ -12,22 +13,35 @@ interface UpdateProfilePayload {
 }
 
 export async function updateProfile(payload: UpdateProfilePayload) {
+  const database = getDatabase();
   try {
-    await db.profile.upsert({
-      where: { id: payload.id },
-      update: {
-        full_name: payload.fullName,
-        department: payload.department,
-        role: payload.role,
-      },
-      create: {
-        id: payload.id,
-        email: payload.email,
-        full_name: payload.fullName,
-        department: payload.department,
-        role: payload.role,
-      },
-    });
+    // await db.profile.upsert({
+    //   where: { id: payload.id },
+    //   update: {
+    //     full_name: payload.fullName,
+    //     department: payload.department,
+    //     role: payload.role,
+    //   },
+    //   create: {
+    //     id: payload.id,
+    //     email: payload.email,
+    //     full_name: payload.fullName,
+    //     department: payload.department,
+    //     role: payload.role,
+    //   },
+    // });
+    const { id, ...data } = payload;
+
+    // Check if the profile exists
+    const existingProfile = await database.findOne("Profile", { id: payload.id });
+
+    if (existingProfile) {
+      // If the profile exists, update it
+      await database.update("Profile", id, data);
+    } else {
+      // If the profile doesn't exist, create it
+      await database.insert("Profile", { id, ...data });
+    }
 
     // Revalidate the path to ensure the UI updates with the new profile info.
     revalidatePath("/dashboard");
@@ -47,8 +61,10 @@ export async function createIdea(payload: {
   strategicAlignmentScore: number | null;
 }) {
   try {
-    await db.idea.create({
-      data: {
+    // await db.idea.create({
+    const database = getDatabase();
+
+    const data = {
         title: payload.title,
         description: payload.description,
         category: payload.category,
@@ -57,8 +73,9 @@ export async function createIdea(payload: {
         expected_roi: payload.expectedRoi,
         strategic_alignment_score: payload.strategicAlignmentScore,
         status: "submitted", // Default status on creation
-      },
-    });
+      };
+    // });
+    await database.insert("Idea", data);
 
     revalidatePath("/dashboard");
   } catch (error) {
