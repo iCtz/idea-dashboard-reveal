@@ -1,9 +1,16 @@
 
-import { Search, Bell, Filter, User } from "lucide-react";
+import { Search, Bell, Filter, User, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Profile } from "@/types/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { signOut } from "next-auth/react";
 
 interface HeaderProps {
   profile: Profile;
@@ -11,10 +18,13 @@ interface HeaderProps {
 
 export const Header = ({ profile }: HeaderProps) => {
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
+    return (name || "")
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+      .slice(0, 2) || "U";
       .toUpperCase()
       .slice(0, 2);
   };
@@ -56,17 +66,35 @@ export const Header = ({ profile }: HeaderProps) => {
             <span className="absolute -top-1 -right-1 h-2 w-2 bg-you-orange rounded-full"></span>
           </Button>
 
-          <div className="flex items-center space-x-3">
-            <Avatar className={`h-10 w-10 ${getRoleColor(profile.role || 'submitter')}`}>
-              <AvatarFallback className="text-white font-semibold">
-                {getInitials(profile.full_name || 'User')}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-right">
-              <p className="text-sm font-semibold text-gray-900">{profile.full_name}</p>
-              <p className="text-xs text-gray-500 capitalize">{profile.role}</p>
-            </div>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex items-center space-x-3 cursor-pointer">
+                <Avatar
+                  className={`h-10 w-10 ${getRoleColor(
+                    profile.role || "submitter"
+                  )}`}
+                >
+                  <AvatarFallback className="text-white font-semibold">
+                    {getInitials(profile.full_name || "User")}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {profile.full_name}
+                  </p>
+                  <p className="text-xs text-gray-500 capitalize">
+                    {profile.role}
+                  </p>
+                </div>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
