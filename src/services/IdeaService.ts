@@ -22,11 +22,17 @@ export class IdeaService {
   public async createIdea(payload: CreateIdeaPayload): Promise<Idea> {
     const { submitterId, ...ideaData } = payload;
     return this.db.create("Idea", {
-      submitter: { connect: { id: payload.submitterId } },
       ...ideaData,
       submitter_id: submitterId,
       status: "submitted",
-      // Prisma will handle default values for fields not provided here
+      priority_score: 0,
+      implementation_cost: null,
+      expected_roi: null,
+      strategic_alignment_score: null,
+      submitted_at: null,
+      evaluated_at: null,
+      implemented_at: null,
+      assigned_evaluator_id: null
     });
   }
 }

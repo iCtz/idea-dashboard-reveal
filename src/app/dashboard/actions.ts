@@ -31,13 +31,15 @@ export async function updateProfile(payload: UpdateProfilePayload) {
       });
     } else {
       // If the profile doesn't exist, create it
-      await database.create("Profile", {
-        id: payload.id,
-        email: payload.email,
-        full_name: payload.fullName,
-        department: payload.department,
-        role: payload.role,
-      });
+      // await database.create("Profile", {
+      //   // id: payload.id,
+      //   email: payload.email,
+      //   full_name: payload.fullName,
+      //   department: payload.department,
+      //   role: payload.role,
+      //   name: null,
+      //   password: null
+      // });
     }
 
     // Revalidate the path to ensure the UI updates with the new profile info.

@@ -39,14 +39,14 @@ export class PostgresDatabase implements IDatabase {
   //       throw new Error(`Model ${modelName} not found in Prisma client.`);
   //   }
   // }
-  private getModel(modelName: string): PrismaClient[keyof PrismaClient] {
-    const model = modelName.toLowerCase() as keyof PrismaClient;
-    const prismaModel = this.prisma[model];
-    if (!prismaModel) {
-      throw new Error(`Model ${modelName} not found in Prisma client.`);
-    }
-    return prismaModel;
-  }
+  // private getModel(modelName: string): PrismaClient[keyof PrismaClient] {
+  //   const model = modelName.toLowerCase() as keyof PrismaClient;
+  //   const prismaModel = this.prisma[model];
+  //   if (!prismaModel) {
+  //     throw new Error(`Model ${modelName} not found in Prisma client.`);
+  //   }
+  //   return prismaModel;
+  // }
 
 	async query<T>(queryString: string, params: unknown[]): Promise<T[]> {
     return this.prisma.$queryRawUnsafe<T[]>(queryString, ...params);
