@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import "reflect-metadata";
-import { injectable } from "inversify";
 import { Prisma, PrismaClient } from '@prisma/client';
+import { inject, injectable } from "inversify";
 import {
   IDatabase,
   ModelName,
@@ -13,14 +13,15 @@ import {
   CreateData,
   UpdateData,
   ModelType,
-} from './IDatabase'; // Adjust path to your IDatabase interface file
+} from "./IDatabase"; // Adjust path to your IDatabase interface file
 import { Profile, Idea, Evaluation } from "@/types/types";
+import { TYPES, type DatabaseConfig } from "@/types/dbtypes";
 
 @injectable()
 export class PostgresDatabase implements IDatabase {
   private prisma: PrismaClient;
 
-  constructor() {
+  constructor(@inject(TYPES.DatabaseConfig) config: DatabaseConfig) {
     this.prisma = new PrismaClient();
   }
 
@@ -47,6 +48,18 @@ export class PostgresDatabase implements IDatabase {
   //   }
   //   return prismaModel;
   // }
+  private getModel<T extends ModelName>(model: T) {
+    switch (model.toLowerCase()) {
+      case "profile":
+        return this.prisma.profile;
+      case "idea":
+        return this.prisma.idea;
+      case "evaluation":
+        return this.prisma.evaluation;
+      default:
+        throw new Error(`Model ${model} not found in Prisma client.`);
+    }
+  }
 
 	async query<T>(queryString: string, params: unknown[]): Promise<T[]> {
     return this.prisma.$queryRawUnsafe<T[]>(queryString, ...params);
@@ -60,11 +73,23 @@ export class PostgresDatabase implements IDatabase {
     // We use a dynamic accessor for the Prisma delegate (e.g., prisma.idea).
     // The model name is lowercased to match Prisma's client API.
     // `any` is used because TypeScript can't statically verify this dynamic access.
+    // const delegate = (this.prisma as any)[model.toLowerCase()];
+    // type Delegate = T extends "Profile"
+    //   ? Prisma.ProfileDelegate
+    //   : T extends "Idea"
+    //   ? Prisma.IdeaDelegate
+    //   : T extends "Evaluation"
+    //   ? Prisma.EvaluationDelegate
+    //   : never;
+
+    // const delegate = this.getModel(model) as Delegate;
     const delegate = (this.prisma as any)[model.toLowerCase()];
     return delegate.findMany({
       where,
       orderBy,
-    });
+      // where: where as any, // Assertion needed for generic Where type
+      // orderBy: orderBy as any, // Assertion needed for generic OrderBy type
+    }) as Promise<ModelType<T>[]>;
   }
 
   async findOne<T extends ModelName>(
@@ -104,3 +129,4 @@ export class PostgresDatabase implements IDatabase {
     return delegate.update({ where, data: data as Prisma.XOR<any, any> });
   }
 }
+

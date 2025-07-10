@@ -33,6 +33,6 @@ export class IdeaService {
       evaluated_at: null,
       implemented_at: null,
       assigned_evaluator_id: null
-    });
+    }) as Promise<Idea>;
   }
 }

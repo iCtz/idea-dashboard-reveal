@@ -1,9 +1,13 @@
 const TYPES = {
   IDatabase: Symbol.for("IDatabase"),
-  DatabaseConfig: Symbol.for("DatabaseConfig"), // Add DatabaseConfig
+  DatabaseConfig: Symbol.for("DatabaseConfig"),
   UserService: Symbol.for("UserService"),
   IdeaService: Symbol.for("IdeaService"),
 };
 
-export { TYPES };
+export interface DatabaseConfig {
+  local: string;
+  supabase: string;
+}
 
+export { TYPES };

@@ -20,13 +20,10 @@ export class SupabaseDatabase implements IDatabase {
   private supabase: SupabaseClient;
 
   constructor() {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseUrl = process.env.SUPABASE_URL || "";
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || "";
 
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Supabase URL and Key must be defined in .env");
-    }
-
+    // Create Supabase client with URL and Key
     this.supabase = createClient(supabaseUrl, supabaseKey);
   }
 
