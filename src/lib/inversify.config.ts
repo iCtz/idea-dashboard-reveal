@@ -9,7 +9,7 @@ import { TYPES } from "@/types/dbtypes";
 
 const container = new Container();
 
-container.bind<IDatabase>(TYPES.IDatabase).to(PostgresDatabase).inSingletonScope();
+// container.bind<IDatabase>(TYPES.IDatabase).to(PostgresDatabase).inSingletonScope();
 // Dynamically bind the database implementation based on the environment variable
 if (process.env.USE_LOCAL_AUTH === "true") {
   console.log("Using local Postgres database.");

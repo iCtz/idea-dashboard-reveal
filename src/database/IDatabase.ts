@@ -1,37 +1,92 @@
 
 import { Prisma } from "@prisma/client";
-import { Idea, Profile, Evaluation } from "../types/types"; // Adjust the import path as
+import { Idea, Profile, Evaluation } from "../types/types"; // Adjust the import path as needed.
+
+// Define your model names as a union type
+export type ModelName = "Idea" | "Profile" | "Evaluation";
+
+// Map model names to their respective types
+export type ModelType<T extends ModelName> = T extends "Idea"
+  ? Idea
+  : T extends "Profile"
+  ? Profile
+  : T extends "Evaluation"
+  ? Evaluation
+  : never;
+
+// Generic type mappings for Prisma inputs
+export type WhereInput<T extends ModelName> = T extends "Idea"
+  ? Prisma.IdeaWhereInput
+  : T extends "Profile"
+  ? Prisma.ProfileWhereInput
+  : T extends "Evaluation"
+  ? Prisma.EvaluationWhereInput
+  : never;
+
+export type OrderByInput<T extends ModelName> = T extends "Idea"
+  ? Prisma.IdeaOrderByWithRelationInput
+  : T extends "Profile"
+  ? Prisma.ProfileOrderByWithRelationInput
+  : T extends "Evaluation"
+  ? Prisma.EvaluationOrderByWithRelationInput
+  : never;
+
+export type WhereUniqueInput<T extends ModelName> = T extends "Idea"
+  ? Prisma.IdeaWhereUniqueInput
+  : T extends "Profile"
+  ? Prisma.ProfileWhereUniqueInput
+  : T extends "Evaluation"
+  ? Prisma.EvaluationWhereUniqueInput
+  : never;
+
+export type CreateInput<T extends ModelName> = T extends "Idea"
+  ? Prisma.IdeaCreateInput
+  : T extends "Profile"
+  ? Prisma.ProfileCreateInput
+  : T extends "Evaluation"
+  ? Prisma.EvaluationCreateInput
+  : never;
+
+export type UpdateInput<T extends ModelName> = T extends "Idea"
+  ? Prisma.IdeaUpdateInput
+  : T extends "Profile"
+  ? Prisma.ProfileUpdateInput
+  : T extends "Evaluation"
+  ? Prisma.EvaluationUpdateInput
+  : never;
 
 /**
  * Defines the contract for a database service, abstracting the underlying ORM.
+ * This version uses generics for better scalability and maintainability.
  */
 export interface IDatabase {
-  
   // A method for raw queries, useful for complex joins or specific database features.
   query<T>(queryString: string, params: unknown[]): Promise<T[]>;
 
-  // Overload the 'find' method for each model to ensure type safety
-  find(model: "Idea", where: Prisma.IdeaWhereInput, orderBy?: Prisma.IdeaOrderByWithRelationInput): Promise<Idea[]>;
-  find(model: "Profile", where: Prisma.ProfileWhereInput, orderBy?: Prisma.ProfileOrderByWithRelationInput): Promise<Profile[]>;
-  find(model: "Evaluation", where: Prisma.EvaluationWhereInput, orderBy?: Prisma.EvaluationOrderByWithRelationInput): Promise<Evaluation[]>;
+  find<T extends ModelName>(
+    model: T,
+    where: WhereInput<T>,
+    orderBy?: OrderByInput<T>
+  ): Promise<ModelType<T>[]>;
 
-  // Overload the 'findOne' method
-  findOne(model: "Profile", where: Prisma.ProfileWhereUniqueInput): Promise<Profile | null>;
-  findOne(model: "Idea", where: Prisma.IdeaWhereUniqueInput): Promise<Idea | null>;
-  findOne(model: "Evaluation", where: Prisma.EvaluationWhereUniqueInput): Promise<Evaluation | null>;
+  findOne<T extends ModelName>(
+    model: T,
+    where: WhereUniqueInput<T>
+  ): Promise<ModelType<T> | null>;
 
-  // Overload the 'count' method
-  count(model: "Profile", where?: Prisma.ProfileWhereInput): Promise<number>;
-  count(model: "Idea", where?: Prisma.IdeaWhereInput): Promise<number>;
-  count(model: "Evaluation", where?: Prisma.EvaluationWhereInput): Promise<number>;
+  count<T extends ModelName>(
+    model: T,
+    where?: WhereInput<T>
+  ): Promise<number>;
 
-  // Overload the 'create' method
-  create(model: "Profile", data: Prisma.ProfileCreateInput): Promise<Profile>;
-  create(model: "Idea", data: Prisma.IdeaCreateInput): Promise<Idea>;
-  create(model: "Evaluation", data: Prisma.EvaluationCreateInput): Promise<Evaluation>;
+  create<T extends ModelName>(
+    model: T,
+    data: CreateInput<T>
+  ): Promise<ModelType<T>>;
 
-  // Overload the 'update' method
-  update(model: "Profile", where: Prisma.ProfileWhereUniqueInput, data: Prisma.ProfileUpdateInput): Promise<Profile>;
-  update(model: "Idea", where: Prisma.IdeaWhereUniqueInput, data: Prisma.IdeaUpdateInput): Promise<Idea>;
-  update(model: "Evaluation", where: Prisma.EvaluationWhereUniqueInput, data: Prisma.EvaluationUpdateInput): Promise<Evaluation>;
+  update<T extends ModelName>(
+    model: T,
+    where: WhereUniqueInput<T>,
+    data: UpdateInput<T>
+  ): Promise<ModelType<T>>;
 }

@@ -18,6 +18,9 @@
     "incremental": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "importHelpers": true,
+    "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true,
     "plugins": [
       {
         "name": "next"

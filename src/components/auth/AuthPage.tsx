@@ -74,10 +74,10 @@ export const AuthPage = () => {
         description: "You can now log in with your new credentials.",
       });
       setActiveTab("login"); // Switch to login tab on success
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Registration Failed",
-        description: error.message,
+        description: (error instanceof Error ? error.message : "An unexpected error occurred."),
         variant: "destructive",
       });
     } finally {
@@ -137,10 +137,10 @@ export const AuthPage = () => {
         description: `Logged in as ${testUser.name} (${testUser.role})`,
       });
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Test Login Error",
-        description: error.message || "Failed to login. Ensure test users are in the database.",
+        description: (error instanceof Error ? error.message : "Failed to login. Ensure test users are in the database."),
         variant: "destructive",
       });
     } finally {

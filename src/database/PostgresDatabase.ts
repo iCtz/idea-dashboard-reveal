@@ -1,8 +1,19 @@
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import "reflect-metadata";
 import { injectable } from "inversify";
-import { Prisma, PrismaClient } from "@prisma/client";
-import { IDatabase } from "./IDatabase";
+import { PrismaClient } from '@prisma/client';
+import {
+  IDatabase,
+  ModelName,
+  WhereInput,
+  OrderByInput,
+  WhereUniqueInput,
+  CreateInput,
+  UpdateInput,
+  ModelType,
+} from './IDatabase'; // Adjust path to your IDatabase interface file
 import { Profile, Idea, Evaluation } from "@/types/types";
 
 @injectable()
@@ -28,7 +39,7 @@ export class PostgresDatabase implements IDatabase {
   //       throw new Error(`Model ${modelName} not found in Prisma client.`);
   //   }
   // }
-  private getModel(modelName: string): unknown {
+  private getModel(modelName: string): PrismaClient[keyof PrismaClient] {
     const model = modelName.toLowerCase() as keyof PrismaClient;
     const prismaModel = this.prisma[model];
     if (!prismaModel) {
@@ -41,32 +52,55 @@ export class PostgresDatabase implements IDatabase {
     return this.prisma.$queryRawUnsafe<T[]>(queryString, ...params);
   }
 
-  async find(
-    model: string,
-    where: unknown,
-    orderBy?: unknown
-  ): Promise<(Profile | Idea | Evaluation)[]> {
-    const modelClient = this.getModel(model);
-    return modelClient.findMany({ where, orderBy });
+  async find<T extends ModelName>(
+    model: T,
+    where: WhereInput<T>,
+    orderBy?: OrderByInput<T>
+  ): Promise<ModelType<T>[]> {
+    // We use a dynamic accessor for the Prisma delegate (e.g., prisma.idea).
+    // The model name is lowercased to match Prisma's client API.
+    // `any` is used because TypeScript can't statically verify this dynamic access.
+    const delegate = (this.prisma as any)[model.toLowerCase()];
+    return delegate.findMany({
+      where,
+      orderBy,
+    });
   }
 
-  async findOne(model: string, where: unknown): Promise<Profile | Idea | Evaluation | null> {
-    const modelClient = this.getModel(model);
-    return modelClient.findUnique({ where });
+  async findOne<T extends ModelName>(
+    model: T,
+    where: WhereUniqueInput<T>
+  ): Promise<ModelType<T> | null> {
+    const delegate = (this.prisma as any)[model.toLowerCase()];
+    return delegate.findUnique({
+      where,
+    });
   }
 
-  async count(model: string, where?: unknown): Promise<number> {
-    const modelClient = this.getModel(model);
-    return modelClient.count({ where });
+  async count<T extends ModelName>(
+    model: T,
+    where?: WhereInput<T>
+  ): Promise<number> {
+    const delegate = (this.prisma as any)[model.toLowerCase()];
+    return delegate.count({
+      where,
+    });
   }
 
-  async create(model: string, data: unknown): Promise<Profile | Idea | Evaluation> {
-    const modelClient = this.getModel(model);
-    return modelClient.create({ data });
+  async create<T extends ModelName>(
+    model: T,
+    data: CreateInput<T>
+  ): Promise<ModelType<T>> {
+    const delegate = (this.prisma as any)[model.toLowerCase()];
+    return delegate.create({ data });
   }
 
-  async update(model: string, where: unknown, data: unknown): Promise<Profile | Idea | Evaluation> {
-    const modelClient = this.getModel(model);
-    return modelClient.update({ where, data });
+  async update<T extends ModelName>(
+    model: T,
+    where: WhereUniqueInput<T>,
+    data: UpdateInput<T>
+  ): Promise<ModelType<T>> {
+    const delegate = (this.prisma as any)[model.toLowerCase()];
+    return delegate.update({ where, data });
   }
 }
