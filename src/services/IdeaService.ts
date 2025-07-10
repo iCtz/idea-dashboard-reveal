@@ -20,10 +20,13 @@ export class IdeaService {
   constructor(@inject(TYPES.IDatabase) private db: IDatabase) {}
 
   public async createIdea(payload: CreateIdeaPayload): Promise<Idea> {
+    const { submitterId, ...ideaData } = payload;
     return this.db.create("Idea", {
       submitter: { connect: { id: payload.submitterId } },
-      ...payload,
+      ...ideaData,
+      submitter_id: submitterId,
       status: "submitted",
+      // Prisma will handle default values for fields not provided here
     });
   }
 }

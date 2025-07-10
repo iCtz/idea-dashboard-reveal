@@ -14,46 +14,21 @@ export type ModelType<T extends ModelName> = T extends "Idea"
   ? Evaluation
   : never;
 
-// Generic type mappings for Prisma inputs
-export type WhereInput<T extends ModelName> = T extends "Idea"
-  ? Prisma.IdeaWhereInput
-  : T extends "Profile"
-  ? Prisma.ProfileWhereInput
-  : T extends "Evaluation"
-  ? Prisma.EvaluationWhereInput
-  : never;
+// --- ORM-Agnostic Generic Types ---
+// A simple key-value pair for basic queries.
+export type Where<T> = Partial<T>;
 
-export type OrderByInput<T extends ModelName> = T extends "Idea"
-  ? Prisma.IdeaOrderByWithRelationInput
-  : T extends "Profile"
-  ? Prisma.ProfileOrderByWithRelationInput
-  : T extends "Evaluation"
-  ? Prisma.EvaluationOrderByWithRelationInput
-  : never;
+// A unique identifier, typically { id: string } or { email: string }
+export type WhereUnique<T> = Partial<T>;
 
-export type WhereUniqueInput<T extends ModelName> = T extends "Idea"
-  ? Prisma.IdeaWhereUniqueInput
-  : T extends "Profile"
-  ? Prisma.ProfileWhereUniqueInput
-  : T extends "Evaluation"
-  ? Prisma.EvaluationWhereUniqueInput
-  : never;
+// A simple object for ordering. E.g., { created_at: "desc" }
+export type OrderBy = Record<string, "asc" | "desc">;
 
-export type CreateInput<T extends ModelName> = T extends "Idea"
-  ? Prisma.IdeaCreateInput
-  : T extends "Profile"
-  ? Prisma.ProfileCreateInput
-  : T extends "Evaluation"
-  ? Prisma.EvaluationCreateInput
-  : never;
+// Data for creating a new record.
+export type CreateData<T> = Omit<T, "id" | "created_at" | "updated_at">;
 
-export type UpdateInput<T extends ModelName> = T extends "Idea"
-  ? Prisma.IdeaUpdateInput
-  : T extends "Profile"
-  ? Prisma.ProfileUpdateInput
-  : T extends "Evaluation"
-  ? Prisma.EvaluationUpdateInput
-  : never;
+// Data for updating an existing record.
+export type UpdateData<T> = Partial<CreateData<T>>;
 
 /**
  * Defines the contract for a database service, abstracting the underlying ORM.
@@ -65,28 +40,28 @@ export interface IDatabase {
 
   find<T extends ModelName>(
     model: T,
-    where: WhereInput<T>,
-    orderBy?: OrderByInput<T>
+    where: Where<ModelType<T>>,
+    orderBy?: OrderBy
   ): Promise<ModelType<T>[]>;
 
   findOne<T extends ModelName>(
     model: T,
-    where: WhereUniqueInput<T>
+    where: WhereUnique<ModelType<T>>
   ): Promise<ModelType<T> | null>;
 
   count<T extends ModelName>(
     model: T,
-    where?: WhereInput<T>
+    where?: Where<ModelType<T>>
   ): Promise<number>;
 
   create<T extends ModelName>(
     model: T,
-    data: CreateInput<T>
+    data: CreateData<ModelType<T>>
   ): Promise<ModelType<T>>;
 
   update<T extends ModelName>(
     model: T,
-    where: WhereUniqueInput<T>,
-    data: UpdateInput<T>
+    where: WhereUnique<ModelType<T>>,
+    data: UpdateData<ModelType<T>>
   ): Promise<ModelType<T>>;
 }

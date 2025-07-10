@@ -3,15 +3,15 @@
 
 import "reflect-metadata";
 import { injectable } from "inversify";
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import {
   IDatabase,
   ModelName,
-  WhereInput,
-  OrderByInput,
-  WhereUniqueInput,
-  CreateInput,
-  UpdateInput,
+  Where,
+  OrderBy,
+  WhereUnique,
+  CreateData,
+  UpdateData,
   ModelType,
 } from './IDatabase'; // Adjust path to your IDatabase interface file
 import { Profile, Idea, Evaluation } from "@/types/types";
@@ -54,8 +54,8 @@ export class PostgresDatabase implements IDatabase {
 
   async find<T extends ModelName>(
     model: T,
-    where: WhereInput<T>,
-    orderBy?: OrderByInput<T>
+    where: Where<ModelType<T>>,
+    orderBy?: OrderBy
   ): Promise<ModelType<T>[]> {
     // We use a dynamic accessor for the Prisma delegate (e.g., prisma.idea).
     // The model name is lowercased to match Prisma's client API.
@@ -69,7 +69,7 @@ export class PostgresDatabase implements IDatabase {
 
   async findOne<T extends ModelName>(
     model: T,
-    where: WhereUniqueInput<T>
+    where: WhereUnique<ModelType<T>>
   ): Promise<ModelType<T> | null> {
     const delegate = (this.prisma as any)[model.toLowerCase()];
     return delegate.findUnique({
@@ -79,7 +79,7 @@ export class PostgresDatabase implements IDatabase {
 
   async count<T extends ModelName>(
     model: T,
-    where?: WhereInput<T>
+    where?: Where<ModelType<T>>
   ): Promise<number> {
     const delegate = (this.prisma as any)[model.toLowerCase()];
     return delegate.count({
@@ -89,18 +89,18 @@ export class PostgresDatabase implements IDatabase {
 
   async create<T extends ModelName>(
     model: T,
-    data: CreateInput<T>
+    data: CreateData<ModelType<T>>
   ): Promise<ModelType<T>> {
     const delegate = (this.prisma as any)[model.toLowerCase()];
-    return delegate.create({ data });
+    return delegate.create({ data: data as Prisma.XOR<any, any> });
   }
 
   async update<T extends ModelName>(
     model: T,
-    where: WhereUniqueInput<T>,
-    data: UpdateInput<T>
+    where: WhereUnique<ModelType<T>>,
+    data: UpdateData<ModelType<T>>
   ): Promise<ModelType<T>> {
     const delegate = (this.prisma as any)[model.toLowerCase()];
-    return delegate.update({ where, data });
+    return delegate.update({ where, data: data as Prisma.XOR<any, any> });
   }
 }

@@ -29,8 +29,10 @@ export default async function DashboardPage() {
   if (profile?.role === "submitter") {
     ideas = await database.find("Idea", { submitter_id: session.user.id }, { created_at: "desc" });
   } else if (profile?.role === "evaluator") {
+    // Use a raw query for complex "IN" clauses not supported by the generic interface
+    const pendingIdeasQuery = 'SELECT * FROM "Idea" WHERE "status" IN (\'submitted\', \'under_review\') ORDER BY "created_at" DESC';
     [ideas, evaluations] = await Promise.all([
-      database.find("Idea", { status: { in: ["submitted", "under_review"] } }, { created_at: "desc" }),
+      database.query<Idea>(pendingIdeasQuery, []),
       database.find("Evaluation", { evaluator_id: session.user.id }),
     ]);
 } else if (profile?.role === "management") {
