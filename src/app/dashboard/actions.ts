@@ -46,7 +46,7 @@ export async function updateProfile(payload: UpdateProfilePayload) {
     revalidatePath("/dashboard");
   } catch (error) {
     console.error("Failed to update profile:", error);
-    return { error: "Failed to update profile." };
+    return { error: "Failed to update profile.", details: (error as Error).message || "Unknown error" };
   }
 }
 
@@ -68,6 +68,6 @@ export async function createIdea(payload: {
     revalidatePath("/dashboard");
   } catch (error) {
     console.error("Failed to create idea:", error);
-    return { error: "Failed to submit idea." };
+    return { error: "Failed to submit idea.", details: (error as Error).message || "Unknown error" };
   }
 }

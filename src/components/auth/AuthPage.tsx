@@ -22,37 +22,35 @@ export const AuthPage = () => {
   const router = useRouter();
 
 
-  // Test user accounts with roles
-  const testUsers = [
-    {
-      email: "submitter@you.com",
-      name: "Hani Gazim",
-      role: "Submitter",
-      userRole: "submitter" as const,
-      id: "11111111-1111-1111-1111-111111111111"
-    },
-    {
-      email: "evaluator@you.com",
-      name: "Abdurhman Alhakeem",
-      role: "Evaluator",
-      userRole: "evaluator" as const,
-      id: "22222222-2222-2222-2222-222222222222"
-    },
-    {
-      email: "management@you.com",
-      name: "Osama Murshed",
-      role: "Management",
-      userRole: "management" as const,
-      id: "33333333-3333-3333-3333-333333333333"
-    },
-    {
-      email: "test@you.com",
-      name: "Test User",
-      role: "Admin",
-      userRole: "management" as const,
-      id: "44444444-4444-4444-4444-444444444444"
-    },
-  ];
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (result?.error) {
+        toast({
+          title: "Login Failed",
+          description: result.error,
+          variant: "destructive",
+        });
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      toast({
+        title: "An unexpected error occurred.",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,75 +81,6 @@ export const AuthPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const result = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-      });
-
-      if (result?.error) {
-        toast({
-          title: "Login Failed",
-          description: result.error,
-          variant: "destructive",
-        });
-      } else {
-        // Successful login, refresh the page to update the session state
-        // and trigger the server component to re-render.
-        router.refresh();
-      }
-    } catch (error) {
-      toast({
-        title: "An unexpected error occurred.",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTestLogin = async (testUser: typeof testUsers[0]) => {
-    setLoading(true);
-    try {
-      // This function now uses the NextAuth credentials provider.
-      // It assumes the test users exist in your local database with the password "Abdu123+++".
-      const result = await signIn("credentials", {
-        redirect: false,
-        email: testUser.email,
-        password: "Abdu123+++",
-      });
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      toast({
-        title: "Login Successful",
-        description: `Logged in as ${testUser.name} (${testUser.role})`,
-      });
-      router.refresh();
-    } catch (error: unknown) {
-      toast({
-        title: "Test Login Error",
-        description: (error instanceof Error ? error.message : "Failed to login. Ensure test users are in the database."),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickAccess = async () => {
-    // Re-purposing this button to use the primary test user.
-    const testUser = testUsers.find(u => u.email === "test@you.com")!;
-    await handleTestLogin(testUser);
   };
 
   return (
@@ -251,57 +180,6 @@ export const AuthPage = () => {
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
-
-                {/* Quick Access Button */}
-                <div className="mt-4">
-                  <Button
-                    onClick={handleQuickAccess}
-                    className="w-full h-12 bg-you-purple hover:bg-you-purple/90 font-medium"
-                    disabled={loading}
-                  >
-                    {loading ? "Accessing..." : "Quick Access"}
-                  </Button>
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    One-click testing access
-                  </p>
-                </div>
-
-                {/* Test Users Section */}
-                <div className="mt-6 pt-6 border-t">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-medium text-sm text-gray-600">Test Different Roles</h4>
-                    <TestTube className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <div className="space-y-2">
-                    {testUsers.map((user, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        className="w-full justify-start h-auto p-3 text-left border-gray-200 hover:bg-gray-50"
-                        onClick={() => handleTestLogin(user)}
-                        disabled={loading}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 rounded-full ${
-                            user.role === 'Submitter' ? 'bg-you-blue' :
-                            user.role === 'Evaluator' ? 'bg-you-green' :
-                            user.role === 'Management' ? 'bg-you-orange' : 'bg-you-purple'
-                          }`}></div>
-                          <div>
-                            <div className="font-medium text-sm text-gray-900">{user.name}</div>
-                            <div className="text-xs text-gray-500">{user.role}</div>
-                          </div>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                  <div className="flex items-center space-x-2 mt-3 p-2 bg-blue-50 rounded-lg">
-                    <AlertCircle className="h-4 w-4 text-blue-600" />
-                    <p className="text-xs text-blue-700">
-                      All accounts will be created automatically with proper roles
-                    </p>
-                  </div>
-                </div>
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">

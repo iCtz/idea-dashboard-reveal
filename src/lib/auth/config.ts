@@ -3,6 +3,9 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { container } from "@/lib/inversify.config"; // Import the container
+import { TYPES } from "@/types/dbtypes"; // Import TYPES
+import { IDatabase } from "@/database/IDatabase"; // Import IDatabase
 
 export const authConfig = {
   adapter: PrismaAdapter(db),
@@ -25,10 +28,10 @@ export const authConfig = {
 
         // 2. Wrap database logic in a try/catch block to prevent crashes
         try {
-          const user = await db.profile.findUnique({
-            where: {
+          const database = container.get<IDatabase>(TYPES.IDatabase);
+
+          const user = await database.findOne("Profile", {
               email: credentials.email as string,
-            },
           });
 
           // 3. Check if user was found and has a password
@@ -94,10 +97,10 @@ export const authConfig = {
       // We use this opportunity to fetch the profile data once and attach it to the token.
       // This database call happens in a Node.js environment (the sign-in API route), so it's safe.
       if (trigger === "signIn" && user) {
-        const userProfile = await db.profile.findUnique({
-          where: { id: user.id },
-        });
+        const database = container.get<IDatabase>(TYPES.IDatabase);
+        const userProfile = await database.findOne("Profile", { id: user.id });
         if (userProfile) {
+          console.log("USER Profile", userProfile)
           token.role = userProfile.role;
           token.full_name = userProfile.full_name;
           token.department = userProfile.department;

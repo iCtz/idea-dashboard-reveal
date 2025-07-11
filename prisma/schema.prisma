@@ -60,8 +60,8 @@ model Idea {
   category                 IdeaCategory
   status                   IdeaStatus  @default(draft)
   priority_score           Int         @default(0)
-  implementation_cost      Decimal?    @db.Decimal(10, 2)  // Changed from Float? to Decimal?
-  expected_roi             Decimal?    @db.Decimal(10, 2)  // Changed from Float? to Decimal?
+  implementation_cost      Decimal?    @db.Decimal(10, 2)
+  expected_roi             Decimal?    @db.Decimal(10, 2)
   strategic_alignment_score Int?       @default(1)
   created_at               DateTime    @default(now()) @db.Timestamptz
   updated_at               DateTime    @default(now()) @updatedAt @db.Timestamptz

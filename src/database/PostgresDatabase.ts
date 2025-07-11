@@ -4,6 +4,7 @@
 import "reflect-metadata";
 import { Prisma, PrismaClient } from '@prisma/client';
 import { inject, injectable } from "inversify";
+import { container } from "@/lib/inversify.config"; // Import the container instance
 import {
   IDatabase,
   ModelName,
@@ -22,7 +23,7 @@ export class PostgresDatabase implements IDatabase {
   private prisma: PrismaClient;
 
   constructor(@inject(TYPES.DatabaseConfig) config: DatabaseConfig) {
-    this.prisma = new PrismaClient();
+    this.prisma = container.get<PrismaClient>(TYPES.PrismaClient);
   }
 
   // A helper to dynamically get the correct Prisma model (e.g., `prisma.profile`).
@@ -49,16 +50,27 @@ export class PostgresDatabase implements IDatabase {
   //   return prismaModel;
   // }
   private getModel<T extends ModelName>(model: T) {
-    switch (model.toLowerCase()) {
-      case "profile":
-        return this.prisma.profile;
-      case "idea":
-        return this.prisma.idea;
-      case "evaluation":
-        return this.prisma.evaluation;
-      default:
-        throw new Error(`Model ${model} not found in Prisma client.`);
-    }
+    // switch (model.toLowerCase()) {
+    //   case "profile":
+    //     return this.prisma.profile;
+    //   case "idea":
+    //     return this.prisma.idea;
+    //   case "evaluation":
+    //     return this.prisma.evaluation;
+    //   default:
+    //     throw new Error(`Model ${model} not found in Prisma client.`);
+    // }
+    type Delegate = T extends "Profile"
+      ? Prisma.ProfileDelegate
+      : T extends "Idea"
+      ? Prisma.IdeaDelegate
+      : T extends "Evaluation"
+      ? Prisma.EvaluationDelegate
+      : T extends "IdeaComment"
+      ? Prisma.IdeaCommentDelegate
+      : never;
+
+    return this.prisma[model.toLowerCase() as keyof PrismaClient] as Delegate;
   }
 
 	async query<T>(queryString: string, params: unknown[]): Promise<T[]> {
@@ -82,8 +94,11 @@ export class PostgresDatabase implements IDatabase {
     //   ? Prisma.EvaluationDelegate
     //   : never;
 
+    // const delegate = this.getModel(model);
     // const delegate = this.getModel(model) as Delegate;
+    // const delegate = this.getModel(model) as Prisma.ProfileDelegate | Prisma.IdeaDelegate | Prisma.EvaluationDelegate | Prisma.IdeaCommentDelegate;
     const delegate = (this.prisma as any)[model.toLowerCase()];
+
     return delegate.findMany({
       where,
       orderBy,

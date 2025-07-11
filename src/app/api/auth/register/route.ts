@@ -1,20 +1,21 @@
-import { db } from "@lib/db";
-import { getDatabase } from "@/database";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { UserRoleEnum } from "@/lib/auth/prisma-enums";
+import { container } from "@/lib/inversify.config"; // Import the container
+import { TYPES } from "@/types/dbtypes"; // Import TYPES
+import { IDatabase } from "@/database/IDatabase"; // Import IDatabase
 
 export async function POST(req: Request) {
-  const database = getDatabase();
   try {
     const body = await req.json();
     const { email, password, fullName, name, department } = body;
+    const db = container.get<IDatabase>(TYPES.IDatabase); // Resolve dependency here
 
     if (!email || !password || !fullName) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
-    const existingUser = await database.findOne("Profile", {
+    const existingUser = await db.findOne("Profile", {
          email: email,
     });
     // const existingUser = await db.profile.findUnique({
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    await database.create("Profile", {
+    await db.create("Profile", {
         email: email,
         password: hashedPassword,
         full_name: fullName,
