@@ -64,6 +64,13 @@ export const authConfig = {
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    },
     /**
      * The `session` callback is called when a session is checked.
      * We can use this to add the user's profile data (id, role, etc.) to the session object.

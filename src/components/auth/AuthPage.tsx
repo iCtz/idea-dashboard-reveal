@@ -28,6 +28,7 @@ export const AuthPage = () => {
     try {
       const result = await signIn("credentials", {
         redirect: false,
+        redirectTo: "/dashboard",
         email,
         password,
       });

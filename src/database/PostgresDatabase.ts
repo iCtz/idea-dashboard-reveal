@@ -4,18 +4,16 @@
 import "reflect-metadata";
 import { Prisma, PrismaClient } from '@prisma/client';
 import { inject, injectable } from "inversify";
-import { container } from "@/lib/inversify.config"; // Import the container instance
 import {
   IDatabase,
   ModelName,
+  ModelType,
   Where,
   OrderBy,
   WhereUnique,
   CreateData,
   UpdateData,
-  ModelType,
 } from "./IDatabase"; // Adjust path to your IDatabase interface file
-import { Profile, Idea, Evaluation } from "@/types/types";
 import { TYPES, type DatabaseConfig } from "@/types/dbtypes";
 
 @injectable()
@@ -23,7 +21,9 @@ export class PostgresDatabase implements IDatabase {
   private prisma: PrismaClient;
 
   constructor(@inject(TYPES.DatabaseConfig) config: DatabaseConfig) {
-    this.prisma = container.get<PrismaClient>(TYPES.PrismaClient);
+    this.prisma = new PrismaClient({
+      datasources: { db: { url: config.local } },
+    });
   }
 
   // A helper to dynamically get the correct Prisma model (e.g., `prisma.profile`).
