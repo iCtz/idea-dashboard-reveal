@@ -49,23 +49,6 @@ export function ProfileSetup({ user, onProfileUpdate }: ProfileSetupProps) {
           title: "Profile Updated",
           description: "Your profile has been successfully set up.",
         });
-        // The onProfileUpdate callback is no longer strictly necessary
-        // because revalidatePath will refresh the data, but we can keep it
-        // for a more immediate client-side state update if desired.
-        onProfileUpdate({
-          id: user.id!,
-          email: user.email!,
-          full_name: fullName,
-          // full_name: fullName || null,
-          department: department || null,
-          role: role,
-          // role: user.role as UserRole || role,
-          // This is a client-side approximation for an immediate UI update.
-          // The server-side revalidation will provide the canonical data.
-          created_at: new Date(),
-          updated_at: new Date(),
-          email_confirmed: null,
-        });
       }
     });
   };
