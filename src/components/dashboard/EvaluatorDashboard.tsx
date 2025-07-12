@@ -1,6 +1,7 @@
 import { Session } from "next-auth";
 import { useMemo } from "react";
-import { Idea, Profile, Evaluation } from "@/types/types";
+// import { Idea, Profile, Evaluation } from "@/types/types";
+import type { Idea, Profile, Evaluation } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Star, TrendingUp, Users } from "lucide-react";

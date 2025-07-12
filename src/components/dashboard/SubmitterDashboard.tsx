@@ -1,6 +1,7 @@
 
 import { useMemo } from "react";
-import { Idea, Profile } from "@/types/types";
+// import { Idea, Profile } from "@/types/types";
+import type { Idea, Profile } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb, Clock, CheckCircle, XCircle, TrendingUp } from "lucide-react";

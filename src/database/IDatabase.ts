@@ -1,17 +1,21 @@
 
 import { Prisma } from "@prisma/client";
-import { Idea, Profile, Evaluation } from "../types/types"; // Adjust the import path as needed.
+import { Idea, Profile, Evaluation, Translation, User, Session, Identity } from "@/types/types"; // Adjust the import path as needed.
 
 // Define your model names as a union type
-export type ModelName = "Idea" | "Profile" | "Evaluation";
+export type ModelName =
+  "Idea" | "Profile" | "Evaluation" | "translations" | "User" | "Session" | "Identity"; // Add auth models as needed
 
 // Map model names to their respective types
 export type ModelType<T extends ModelName> = T extends "Idea"
   ? Idea
   : T extends "Profile"
   ? Profile
-  : T extends "Evaluation"
-  ? Evaluation
+  : T extends "Evaluation" ? Evaluation
+  : T extends "translations" ? Translation
+  : T extends "User" ? User
+  : T extends "Session" ? Session
+  : T extends "Identity" ? Identity
   : never;
 
 // --- ORM-Agnostic Generic Types ---
@@ -26,6 +30,7 @@ export type OrderBy = Record<string, "asc" | "desc">;
 
 // Data for creating a new record.
 export type CreateData<T> = Omit<T, "id" | "created_at" | "updated_at">;
+// export type CreateData<T> = Partial<Pick<T, "id">> & Omit<T, "id" | "created_at" | "updated_at">;
 
 // Data for updating an existing record.
 export type UpdateData<T> = Partial<CreateData<T>>;

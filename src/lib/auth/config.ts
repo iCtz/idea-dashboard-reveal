@@ -1,11 +1,12 @@
 import type { NextAuthConfig } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
-import { db } from "@/lib/db";
+import { db } from "@lib/db";
 import bcrypt from "bcryptjs";
 import { container } from "@/lib/inversify.config"; // Import the container
 import { TYPES } from "@/types/dbtypes"; // Import TYPES
 import { IDatabase } from "@/database/IDatabase"; // Import IDatabase
+import { LoginSchema } from "./schemas";
 
 export const authConfig = {
   adapter: PrismaAdapter(db),
@@ -13,12 +14,19 @@ export const authConfig = {
   pages: {
     signIn: "/",
   },
+  events: {
+    createUser: async ({ user }) => {
+    },
+  },
   providers: [
     Credentials({
       // The `authorize` function is where the login validation happens.
       // Any error thrown here will cause the server to crash the request.
       async authorize(credentials) {
         console.log("AUTHORIZE: Attempting to log in with:", credentials.email);
+        // console.log("bcrypt pass: ", await bcrypt.hash('test', 10));
+
+        const validatedFields = LoginSchema.safeParse(credentials);
 
         // 1. Validate that email and password exist
         if (!credentials?.email || !credentials.password) {
@@ -30,23 +38,24 @@ export const authConfig = {
         try {
           const database = container.get<IDatabase>(TYPES.IDatabase);
 
-          const user = await database.findOne("Profile", {
+          const user = await database.findOne("User", {
               email: credentials.email as string,
           });
 
           // 3. Check if user was found and has a password
           // IMPORTANT: Ensure your user model has a `hashedPassword` field
-          if (!user || !user.password) {
+          if (!user || !user.encrypted_password) {
             console.warn("AUTHORIZE: User not found or has no password:", credentials.email);
             return null;
           }
 
           // 4. Compare the provided password with the stored hash
-          const passwordsMatch = user.password === credentials.password;
-          // const passwordsMatch = await bcrypt.compare(
-          //   credentials.password as string,
-          //   user.password
-          // );
+          // const passwordsMatch = user.password === credentials.password;
+          const passwordsMatch = await bcrypt.compare(
+            credentials.password as string,
+            // user.password
+            user.encrypted_password
+          );
 
           if (!passwordsMatch) {
             console.warn("AUTHORIZE: Password mismatch for user:", user.email);

@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/../auth";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { getDatabase } from "@/database";
-import { Idea, Profile, Evaluation } from "@/types/types";
+import { db } from "@lib/db";
+import type { Idea, Profile, Evaluation } from "@prisma/client";
 
 /**
  * This is the main secure entry point for the dashboard.
@@ -30,18 +31,32 @@ export default async function DashboardPage() {
     ideas = await database.find("Idea", { submitter_id: session.user.id }, { created_at: "desc" });
   } else if (profile?.role === "evaluator") {
     // Use a raw query for complex "IN" clauses not supported by the generic interface
-    const pendingIdeasQuery = 'SELECT * FROM "Idea" WHERE "status" IN (\'submitted\', \'under_review\') ORDER BY "created_at" DESC';
+    // const pendingIdeasQuery = 'SELECT * FROM "Idea" WHERE "status" IN (\'submitted\', \'under_review\') ORDER BY "created_at" DESC';
+    // [ideas, evaluations] = await Promise.all([
+    //   database.query<Idea>(pendingIdeasQuery, []),
+    //   database.find("Evaluation", { evaluator_id: session.user.id }),
+    // ]);
     [ideas, evaluations] = await Promise.all([
-      database.query<Idea>(pendingIdeasQuery, []),
+      // Using Prisma Client for a type-safe query
+      db.idea.findMany({
+        where: {
+          status: {
+            in: ['submitted', 'under_review']
+          }
+        },
+        orderBy: {
+          created_at: 'desc'
+        }
+      }),
       database.find("Evaluation", { evaluator_id: session.user.id }),
     ]);
-} else if (profile?.role === "management") {
+  } else if (profile?.role === "management") {
     [allIdeas, userCount] = await Promise.all([
       database.find("Idea", {}, { created_at: "desc" }),
       database.count("Profile"),
       // database.query("SELECT COUNT(*) as count FROM Profile").then(res => res[0]?.count || 0), // Adjust based on your query result
     ]);
-}
+  }
 
       // Render the client component with the user and profile data.
   return (

@@ -129,7 +129,7 @@ export const AuthPage = () => {
       // Try to sign in first
       const { error: signInError } = await signIn("credentials",{
         redirect: false,
-        email: "testUser.email",
+        email: testUser.email,
         password: "Abdu123+++",
       });
 
@@ -140,7 +140,7 @@ export const AuthPage = () => {
         const response = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: "testUser.email", password: "Abdu123+++", fullName: "Abdulrahman AlHakeem" }),
+          body: JSON.stringify({ email: testUser.email, password: "Abdu123+++", fullName: testUser.name }),
         });
 
         if (!response.ok) {
@@ -213,7 +213,7 @@ export const AuthPage = () => {
         const response = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: "testUser.email", password: "Abdu123+++", fullName: "Abdulrahman AlHakeem" }),
+          body: JSON.stringify({ email: adminEmail, password: adminPassword, fullName: "Browse Admin" }),
         });
 
         if (!response.ok) {

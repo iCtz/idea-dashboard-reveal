@@ -11,3 +11,12 @@ export type Idea = Prisma.IdeaGetPayload<object>;
 export type Evaluation = Prisma.EvaluationGetPayload<object>;
 
 export type IdeaComment = Prisma.IdeaCommentGetPayload<object>;
+
+export type Translation = Prisma.translationsGetPayload<object>;
+
+export type User = Prisma.UserGetPayload<object>;
+
+export type Session = Prisma.SessionGetPayload<object>;
+
+export type Identity = Prisma.IdentityGetPayload<object>;
+

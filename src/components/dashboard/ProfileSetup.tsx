@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import type { Session } from "next-auth";
-import type { Profile } from "@/types/types";
+// import type { Profile } from "@/types/types";
+import type { Profile } from "@prisma/client";
 import { updateProfile } from "@/app/dashboard/actions";
 import { UserRole } from "@prisma/client";
 
@@ -54,10 +55,8 @@ export function ProfileSetup({ user, onProfileUpdate }: ProfileSetupProps) {
         onProfileUpdate({
           id: user.id!,
           email: user.email!,
-          name: user.name || null,
           full_name: fullName,
           // full_name: fullName || null,
-          password: null, // Password is not set here
           department: department || null,
           role: role,
           // role: user.role as UserRole || role,
@@ -65,6 +64,7 @@ export function ProfileSetup({ user, onProfileUpdate }: ProfileSetupProps) {
           // The server-side revalidation will provide the canonical data.
           created_at: new Date(),
           updated_at: new Date(),
+          email_confirmed: null,
         });
       }
     });

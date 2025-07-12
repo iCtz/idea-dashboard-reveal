@@ -14,7 +14,8 @@ import {
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Profile } from "@/types/types";
+// import { Profile } from "@/types/types";
+import type { Profile } from "@prisma/client";
 
 interface SidebarProps {
   profile: Profile;

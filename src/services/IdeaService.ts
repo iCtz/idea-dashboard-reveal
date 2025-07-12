@@ -1,7 +1,8 @@
 import "reflect-metadata";
 import { inject, injectable } from "inversify";
 import type { IDatabase } from "@/database/IDatabase";
-import { Idea } from "@/types/types";
+// import { Idea } from "@/types/types";
+import type { Idea } from "@prisma/client";
 import { TYPES } from "@/types/dbtypes";
 import { IdeaCategory } from "@prisma/client";
 

@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import type { Session } from "next-auth";
-import { Idea, Profile, Evaluation } from "@/types/types";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SubmitterDashboard } from "./SubmitterDashboard";
 import { EvaluatorDashboard } from "./EvaluatorDashboard";
 import { ManagementDashboard } from "./ManagementDashboard";
 import { ProfileSetup } from "./ProfileSetup";
+import type { Idea, Profile, Evaluation } from "@prisma/client";
 
 interface DashboardClientProps {
   user: Session["user"];

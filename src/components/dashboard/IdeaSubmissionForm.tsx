@@ -1,7 +1,8 @@
 "use client";
 
 import { useTransition, useRef } from "react";
-import { Profile } from "@/types/types";
+// import { Profile } from "@/types/types";
+import type { Profile } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

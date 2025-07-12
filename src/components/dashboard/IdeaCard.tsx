@@ -1,4 +1,5 @@
-import { Idea } from "@/types/types";
+// import { Idea } from "@/types/types";
+import type { Idea } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, DollarSign } from "lucide-react";

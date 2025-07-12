@@ -79,9 +79,9 @@ export class PostgresDatabase implements IDatabase {
 
   async find<T extends ModelName>(
     model: T,
-    where: Where<ModelType<T>>,
-    orderBy?: OrderBy
-  ): Promise<ModelType<T>[]> {
+  //   where: Where<ModelType<T>>,
+  //   orderBy?: OrderBy
+  // ): Promise<ModelType<T>[]> {
     // We use a dynamic accessor for the Prisma delegate (e.g., prisma.idea).
     // The model name is lowercased to match Prisma's client API.
     // `any` is used because TypeScript can't statically verify this dynamic access.
@@ -97,14 +97,31 @@ export class PostgresDatabase implements IDatabase {
     // const delegate = this.getModel(model);
     // const delegate = this.getModel(model) as Delegate;
     // const delegate = this.getModel(model) as Prisma.ProfileDelegate | Prisma.IdeaDelegate | Prisma.EvaluationDelegate | Prisma.IdeaCommentDelegate;
-    const delegate = (this.prisma as any)[model.toLowerCase()];
-
-    return delegate.findMany({
-      where,
-      orderBy,
-      // where: where as any, // Assertion needed for generic Where type
-      // orderBy: orderBy as any, // Assertion needed for generic OrderBy type
-    }) as Promise<ModelType<T>[]>;
+    where: Where<ModelType<T>>, // Your existing generic Where type
+    orderBy?: OrderBy // Your existing OrderBy type
+  ): Promise<ModelType<T>[]> {
+    const modelName = model.toLowerCase();
+    // Check if the model is part of the auth schema
+    if (["user", "session", "identity"].includes(modelName)) {
+      const delegate = (this.prisma as any)[modelName]; // Access auth models
+      return delegate.findMany({
+        where,
+        orderBy,
+      });
+    } else {
+      // Existing logic for other models
+      const delegate = (this.prisma as any)[modelName];
+      return delegate.findMany({
+        where,
+        orderBy,
+      });
+    }
+    // return delegate.findMany({
+    //   where,
+    //   orderBy,
+    //   // where: where as any, // Assertion needed for generic Where type
+    //   // orderBy: orderBy as any, // Assertion needed for generic OrderBy type
+    // }) as Promise<ModelType<T>[]>;
   }
 
   async findOne<T extends ModelName>(
