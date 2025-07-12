@@ -36,21 +36,34 @@ enum IdeaCategory {
 }
 
 model Profile {
-  id           String     @id @db.Uuid
-  email        String     @unique
-  full_name    String?
-  name         String?
-  password     String?    @db.Text // For local auth only
-  role         UserRole   @default(submitter)
-  department   String?
-  created_at   DateTime   @default(now()) @db.Timestamptz
-  updated_at   DateTime   @default(now()) @updatedAt @db.Timestamptz
+  id              String     @id @db.Uuid
+  email           String     @unique
+  full_name       String?
+  name            String?
+  password        String?    @db.Text // For local auth only
+  role            UserRole   @default(submitter)
+  department      String?
+  email_confirmed Boolean?   @default(true)
+  created_at      DateTime   @default(now()) @db.Timestamptz
+  updated_at      DateTime   @default(now()) @updatedAt @db.Timestamptz
 
   // Relations
   submitted_ideas Idea[]  @relation("submitter_ideas")
   evaluated_ideas Idea[]  @relation("evaluator_ideas")
-  evaluations    Evaluation[]
-  comments       IdeaComment[]
+  evaluations     Evaluation[]
+  comments        IdeaComment[]
+}
+
+model translations {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  interface_name String
+  position_key   String
+  english_text   String
+  arabic_text    String
+  created_at     DateTime @default(now()) @db.Timestamptz
+  updated_at     DateTime @default(now()) @db.Timestamptz
+
+  @@unique([interface_name, position_key])
 }
 
 model Idea {
