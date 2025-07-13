@@ -24,46 +24,14 @@ export const AuthPageTestUserPanel = () => {
     try {
       console.log(`Attempting login for ${testUser.name} (${testUser.email})`);
 
-      const { error: signInError } = await signIn("credentials",{
+      const result = await signIn("credentials",{
         redirect: false,
         email: testUser.email,
         password: testUserPassword,
       });
 
-      // If sign in fails, create the user
-      if (signInError) {
-        console.log("User doesn't exist, creating...");
-
-        const response = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: testUser.email, password: testUserPassword, fullName: testUser.name }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          throw new Error(errorData || "Failed to create account.");
-        }
-
-        toast({
-          title: "Account Created",
-          description: "You can now log in with your new credentials.",
-        });
-
-        // The profile should be created automatically by the trigger
-        // Let's wait a moment and then sign in
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Now sign in
-        const { error: finalSignInError } = await signIn("credentials", {
-          redirect: false,
-          email: testUser.email,
-          password: testUserPassword,
-        });
-
-        if (finalSignInError) {
-          throw new Error(`Final login failed: ${finalSignInError.toString()}`);
-        }
+      if (result?.error) {
+        throw new Error("Login failed. Please ensure you have run the database seed script.");
       }
 
       console.log("Login successful for", testUser.name);

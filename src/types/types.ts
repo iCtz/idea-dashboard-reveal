@@ -12,7 +12,7 @@ export type Evaluation = Prisma.EvaluationGetPayload<object>;
 
 export type IdeaComment = Prisma.IdeaCommentGetPayload<object>;
 
-export type Translation = Prisma.translationsGetPayload<object>;
+export type Translation = Prisma.TranslationGetPayload<object>;
 
 export type User = Prisma.UserGetPayload<object>;
 

@@ -33,7 +33,14 @@ export class IdeaService {
       submitted_at: null,
       evaluated_at: null,
       implemented_at: null,
-      assigned_evaluator_id: null
+      assigned_evaluator_id: null,
+      language: null,
+      idea_reference_code: null,
+      average_evaluation_score: null,
+      feasibility_study_url: null,
+      pricing_offer_url: null,
+      prototype_images_urls: [],
+      current_stage: null
     }) as Promise<Idea>;
   }
 }

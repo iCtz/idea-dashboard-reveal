@@ -1,7 +1,6 @@
 // import { redirect } from "next/navigation";
 import { auth } from "@/../auth";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
-import { getDatabase } from "@/database";
 import { db } from "@lib/db";
 import type { Idea, Profile, Evaluation } from "@prisma/client";
 import { AuthPage } from "@/components/auth/AuthPage";
@@ -23,9 +22,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const database = getDatabase();
-
-  const profile: Profile | null = await database.findOne("Profile", { id: session.user.id });
+  const profile: Profile | null = await db.profile.findUnique({ where: { id: session.user.id } });
 
   // Conditionally fetch data based on the user's role
   let ideas: Idea[] = [];
@@ -34,16 +31,9 @@ export default async function DashboardPage() {
   let userCount = 0;
 
   if (profile?.role === "submitter") {
-    ideas = await database.find("Idea", { submitter_id: session.user.id }, { created_at: "desc" });
+    ideas = await db.idea.findMany({ where: { submitter_id: session.user.id }, orderBy: { created_at: "desc" } });
   } else if (profile?.role === "evaluator") {
-    // Use a raw query for complex "IN" clauses not supported by the generic interface
-    // const pendingIdeasQuery = 'SELECT * FROM "Idea" WHERE "status" IN (\'submitted\', \'under_review\') ORDER BY "created_at" DESC';
-    // [ideas, evaluations] = await Promise.all([
-    //   database.query<Idea>(pendingIdeasQuery, []),
-    //   database.find("Evaluation", { evaluator_id: session.user.id }),
-    // ]);
     [ideas, evaluations] = await Promise.all([
-      // Using Prisma Client for a type-safe query
       db.idea.findMany({
         where: {
           status: {
@@ -54,13 +44,12 @@ export default async function DashboardPage() {
           created_at: 'desc'
         }
       }),
-      database.find("Evaluation", { evaluator_id: session.user.id }),
+      db.evaluation.findMany({ where: { evaluator_id: session.user.id } }),
     ]);
   } else if (profile?.role === "management") {
     [allIdeas, userCount] = await Promise.all([
-      database.find("Idea", {}, { created_at: "desc" }),
-      database.count("Profile"),
-      // database.query("SELECT COUNT(*) as count FROM Profile").then(res => res[0]?.count || 0), // Adjust based on your query result
+      db.idea.findMany({ orderBy: { created_at: "desc" } }),
+      db.profile.count(),
     ]);
   }
 
@@ -78,4 +67,3 @@ export default async function DashboardPage() {
     </LanguageProvider>
     );
 }
-
