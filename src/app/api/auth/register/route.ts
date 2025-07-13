@@ -30,13 +30,12 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
     await db.create("Profile", {
-        email: email,
-        password: hashedPassword,
-        full_name: fullName,
-        role: UserRoleEnum.submitter,
-        name: name || null, // Assuming 'name' is optional and can be null
-        department: department || null, // Assuming 'department' is optional and can be null
-      });
+      email: email,
+      full_name: fullName,
+      role: UserRoleEnum.submitter,
+      department: department || null,
+      email_confirmed: null
+    });
     // await db.profile.create({
     //   data: { email, password: hashedPassword, full_name: fullName, role: UserRoleEnum.submitter },
     // });

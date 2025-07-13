@@ -41,6 +41,7 @@ export const authConfig = {
           const user = await database.findOne("User", {
               email: credentials.email as string,
           });
+          console.log("user is: ", user)
 
           // 3. Check if user was found and has a password
           // IMPORTANT: Ensure your user model has a `hashedPassword` field
@@ -50,10 +51,8 @@ export const authConfig = {
           }
 
           // 4. Compare the provided password with the stored hash
-          // const passwordsMatch = user.password === credentials.password;
           const passwordsMatch = await bcrypt.compare(
             credentials.password as string,
-            // user.password
             user.encrypted_password
           );
 
@@ -63,7 +62,10 @@ export const authConfig = {
           }
 
           console.log("AUTHORIZE: Success! User authenticated:", user.email);
-          // 5. On success, return the user object
+
+          // 5. On success, return the user object as a valid User type
+          // Ensure role is a valid UserRole (not null or string)
+          // You may need to import UserRole type from your types if not already
           return user;
         } catch (error) {
           console.error("AUTHORIZE: An unexpected error occurred:", error);
