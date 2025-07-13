@@ -1,9 +1,6 @@
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "auth";
 
--- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
-
 -- CreateEnum
 CREATE TYPE "public"."UserRole" AS ENUM ('submitter', 'evaluator', 'management', 'ADMIN', 'USER');
 
@@ -12,6 +9,9 @@ CREATE TYPE "public"."IdeaStatus" AS ENUM ('draft', 'submitted', 'under_review',
 
 -- CreateEnum
 CREATE TYPE "public"."IdeaCategory" AS ENUM ('innovation', 'process_improvement', 'cost_reduction', 'customer_experience', 'technology', 'sustainability');
+
+-- CreateEnum
+CREATE TYPE "public"."AttachmentFileType" AS ENUM ('feasibility', 'pricing_offer', 'prototype');
 
 -- CreateEnum
 CREATE TYPE "auth"."CodeChallengeMethod" AS ENUM ('s256', 'plain');
@@ -44,7 +44,7 @@ CREATE TABLE "public"."Profile" (
 
 -- CreateTable
 CREATE TABLE "public"."translations" (
-    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "id" UUID NOT NULL,
     "interface_name" TEXT NOT NULL,
     "position_key" TEXT NOT NULL,
     "english_text" TEXT NOT NULL,
@@ -71,10 +71,54 @@ CREATE TABLE "public"."Idea" (
     "submitted_at" TIMESTAMPTZ,
     "evaluated_at" TIMESTAMPTZ,
     "implemented_at" TIMESTAMPTZ,
+    "idea_reference_code" VARCHAR,
+    "average_evaluation_score" DECIMAL,
+    "feasibility_study_url" TEXT,
+    "pricing_offer_url" TEXT,
+    "prototype_images_urls" TEXT[],
+    "current_stage" TEXT DEFAULT 'draft',
+    "language" VARCHAR DEFAULT 'ar',
     "submitter_id" UUID NOT NULL,
     "assigned_evaluator_id" UUID,
 
     CONSTRAINT "Idea_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."IdeaComment" (
+    "id" UUID NOT NULL,
+    "comment" TEXT NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "idea_id" UUID NOT NULL,
+    "user_id" UUID NOT NULL,
+
+    CONSTRAINT "IdeaComment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."idea_attachments" (
+    "id" UUID NOT NULL,
+    "idea_id" UUID NOT NULL,
+    "file_type" "public"."AttachmentFileType" NOT NULL,
+    "file_name" TEXT,
+    "file_url" TEXT,
+    "uploaded_by" UUID NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "idea_attachments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."list_of_values" (
+    "id" SERIAL NOT NULL,
+    "list_key" TEXT NOT NULL,
+    "value_key" TEXT NOT NULL,
+    "value_en" TEXT NOT NULL,
+    "value_ar" TEXT NOT NULL,
+    "is_active" BOOLEAN DEFAULT true,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "list_of_values_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -92,17 +136,6 @@ CREATE TABLE "public"."Evaluation" (
     "evaluator_id" UUID NOT NULL,
 
     CONSTRAINT "Evaluation_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."IdeaComment" (
-    "id" UUID NOT NULL,
-    "comment" TEXT NOT NULL,
-    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "idea_id" UUID NOT NULL,
-    "user_id" UUID NOT NULL,
-
-    CONSTRAINT "IdeaComment_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -352,6 +385,9 @@ CREATE UNIQUE INDEX "Profile_email_key" ON "public"."Profile"("email");
 CREATE UNIQUE INDEX "translations_interface_name_position_key_key" ON "public"."translations"("interface_name", "position_key");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Idea_idea_reference_code_key" ON "public"."Idea"("idea_reference_code");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "mfa_factors_last_challenged_at_key" ON "auth"."mfa_factors"("last_challenged_at");
 
 -- CreateIndex
@@ -367,22 +403,31 @@ CREATE UNIQUE INDEX "users_email_key" ON "auth"."users"("email");
 CREATE UNIQUE INDEX "users_phone_key" ON "auth"."users"("phone");
 
 -- AddForeignKey
+ALTER TABLE "public"."Profile" ADD CONSTRAINT "Profile_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Idea" ADD CONSTRAINT "Idea_submitter_id_fkey" FOREIGN KEY ("submitter_id") REFERENCES "public"."Profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Idea" ADD CONSTRAINT "Idea_assigned_evaluator_id_fkey" FOREIGN KEY ("assigned_evaluator_id") REFERENCES "public"."Profile"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Evaluation" ADD CONSTRAINT "Evaluation_idea_id_fkey" FOREIGN KEY ("idea_id") REFERENCES "public"."Idea"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."Evaluation" ADD CONSTRAINT "Evaluation_evaluator_id_fkey" FOREIGN KEY ("evaluator_id") REFERENCES "public"."Profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "public"."IdeaComment" ADD CONSTRAINT "IdeaComment_idea_id_fkey" FOREIGN KEY ("idea_id") REFERENCES "public"."Idea"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."IdeaComment" ADD CONSTRAINT "IdeaComment_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."Profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."idea_attachments" ADD CONSTRAINT "idea_attachments_idea_id_fkey" FOREIGN KEY ("idea_id") REFERENCES "public"."Idea"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."idea_attachments" ADD CONSTRAINT "idea_attachments_uploaded_by_fkey" FOREIGN KEY ("uploaded_by") REFERENCES "public"."Profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Evaluation" ADD CONSTRAINT "Evaluation_idea_id_fkey" FOREIGN KEY ("idea_id") REFERENCES "public"."Idea"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Evaluation" ADD CONSTRAINT "Evaluation_evaluator_id_fkey" FOREIGN KEY ("evaluator_id") REFERENCES "public"."Profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "auth"."identities" ADD CONSTRAINT "identities_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -416,4 +461,3 @@ ALTER TABLE "auth"."sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "auth"."sso_domains" ADD CONSTRAINT "sso_domains_sso_provider_id_fkey" FOREIGN KEY ("sso_provider_id") REFERENCES "auth"."sso_providers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
