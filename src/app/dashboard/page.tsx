@@ -1,9 +1,11 @@
-import { redirect } from "next/navigation";
+// import { redirect } from "next/navigation";
 import { auth } from "@/../auth";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { getDatabase } from "@/database";
 import { db } from "@lib/db";
 import type { Idea, Profile, Evaluation } from "@prisma/client";
+import { AuthPage } from "@/components/auth/AuthPage";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 /**
  * This is the main secure entry point for the dashboard.
@@ -14,7 +16,11 @@ export default async function DashboardPage() {
 
   if (!session?.user?.id) {
     // If the user is not authenticated, redirect them to the login page.
-    redirect("/");
+    return (
+      <LanguageProvider>
+        <AuthPage />
+      </LanguageProvider>
+    );
   }
 
   const database = getDatabase();
@@ -60,14 +66,16 @@ export default async function DashboardPage() {
 
       // Render the client component with the user and profile data.
   return (
-    <DashboardClient
-      user={session.user}
-      profile={profile}
-      ideas={ideas}
-      evaluations={evaluations}
-      allIdeas={allIdeas}
-      userCount={userCount}
-    />
+    <LanguageProvider>
+      <DashboardClient
+        user={session.user}
+        profile={profile}
+        ideas={ideas}
+        evaluations={evaluations}
+        allIdeas={allIdeas}
+        userCount={userCount}
+      />
+    </LanguageProvider>
     );
 }
 

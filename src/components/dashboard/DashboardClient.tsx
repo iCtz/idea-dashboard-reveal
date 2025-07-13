@@ -8,7 +8,11 @@ import { SubmitterDashboard } from "./SubmitterDashboard";
 import { EvaluatorDashboard } from "./EvaluatorDashboard";
 import { ManagementDashboard } from "./ManagementDashboard";
 import { ProfileSetup } from "./ProfileSetup";
-import type { Idea, Profile, Evaluation } from "@prisma/client";
+import type { Idea, Profile, Evaluation, User } from "@prisma/client";
+
+interface DashboardProps {
+  user: User;
+}
 
 interface DashboardClientProps {
   user: Session["user"];
