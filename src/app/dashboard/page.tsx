@@ -1,3 +1,6 @@
+
+"use client"
+
 // import { redirect } from "next/navigation";
 import { auth } from "@/../auth";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
