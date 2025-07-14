@@ -41,7 +41,7 @@ export const authConfig = {
           const user = await database.findOne("User", {
               email: credentials.email as string,
           });
-          console.log("user is: ", user)
+          // console.log("user is: ", user)
 
           // 3. Check if user was found and has a password
           // IMPORTANT: Ensure your user model has a `hashedPassword` field
