@@ -45,7 +45,7 @@ export const authConfig = {
 
           // 3. Check if user was found and has a password
           // IMPORTANT: Ensure your user model has a `hashedPassword` field
-          if (!user || !user.encrypted_password) {
+          if (!user?.encrypted_password) {
             console.warn("AUTHORIZE: User not found or has no password:", credentials.email);
             return null;
           }
