@@ -41,6 +41,7 @@ export function ProfileSetup({ user, profile, onProfileUpdate }: Readonly<Profil
       return;
     }
 
+    // Start Transition
     startTransition(async () => {
       const result = await updateProfile({
         id: profile.id,
