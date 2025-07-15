@@ -99,6 +99,98 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
     );
   }
 
+  const renderIdeasContent = () => {
+    if (loading) {
+      return <div className="text-center py-8">{t('common', 'loading')}</div>;
+    }
+
+    if (ideas.length === 0) {
+      return (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <ClipboardCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-lg font-medium mb-2">{t('dashboard', 'no_ideas_assigned')}</p>
+            <p className="text-muted-foreground">
+              {t('dashboard', 'check_back_later')}
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {ideas.map((idea) => {
+          const isEvaluated = isIdeaEvaluated(idea.id);
+          return (
+            <Card key={idea.id} className={isEvaluated ? "opacity-75" : ""}>
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-semibold">{idea.title}</h3>
+                      {idea.idea_reference_code && (
+                        <Badge variant="outline" className="text-xs font-mono">
+                          {idea.idea_reference_code}
+                        </Badge>
+                      )}
+                      {isEvaluated && (
+                        <Badge variant="secondary" className="text-xs">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          {t('dashboard', 'evaluated')}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground mb-3 line-clamp-2">
+                      {idea.description}
+                    </p>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline">
+                          {idea.category.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      {idea.submitted_at && (
+                        <span>
+                          {t('dashboard', 'submitted_at')}: {new Date(idea.submitted_at).toLocaleDateString()}
+                        </span>
+                      )}
+                      {idea.average_evaluation_score && idea.average_evaluation_score.toNumber() > 0.0 && (
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <span>{idea.average_evaluation_score.toFixed(1)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {!isEvaluated && (
+                      <Button
+                        onClick={() => handleEvaluateIdea(idea)}
+                        className="gap-2"
+                      >
+                        <ClipboardCheck className="h-4 w-4" />
+                        {t('dashboard', 'evaluate')}
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <Eye className="h-4 w-4" />
+                      {t('dashboard', 'view_details')}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderDashboardOverview = () => (
     <div className="space-y-6">
       {/* Header */}
@@ -176,89 +268,7 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
           {t('dashboard', 'ideas_for_evaluation')}
         </h2>
 
-        {loading ? (
-          <div className="text-center py-8">{t('common', 'loading')}</div>
-        ) : ideas.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <ClipboardCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium mb-2">{t('dashboard', 'no_ideas_assigned')}</p>
-              <p className="text-muted-foreground">
-                {t('dashboard', 'check_back_later')}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {ideas.map((idea) => {
-              const isEvaluated = isIdeaEvaluated(idea.id);
-              return (
-                <Card key={idea.id} className={isEvaluated ? "opacity-75" : ""}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-semibold">{idea.title}</h3>
-                          {idea.idea_reference_code && (
-                            <Badge variant="outline" className="text-xs font-mono">
-                              {idea.idea_reference_code}
-                            </Badge>
-                          )}
-                          {isEvaluated && (
-                            <Badge variant="secondary" className="text-xs">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              {t('dashboard', 'evaluated')}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-muted-foreground mb-3 line-clamp-2">
-                          {idea.description}
-                        </p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline">
-                              {idea.category.replace('_', ' ')}
-                            </Badge>
-                          </div>
-                          {idea.submitted_at && (
-                            <span>
-                              {t('dashboard', 'submitted_at')}: {new Date(idea.submitted_at).toLocaleDateString()}
-                            </span>
-                          )}
-                          {idea.average_evaluation_score && idea.average_evaluation_score.toNumber() > 0.0 && (
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 text-yellow-500" />
-                              <span>{idea.average_evaluation_score.toFixed(1)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        {!isEvaluated && (
-                          <Button
-                            onClick={() => handleEvaluateIdea(idea)}
-                            className="gap-2"
-                          >
-                            <ClipboardCheck className="h-4 w-4" />
-                            {t('dashboard', 'evaluate')}
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                        >
-                          <Eye className="h-4 w-4" />
-                          {t('dashboard', 'view_details')}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+        {renderIdeasContent()}
       </div>
     </div>
   );
