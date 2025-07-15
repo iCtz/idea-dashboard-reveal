@@ -101,7 +101,7 @@ export function DashboardClient({
             user={user}
             profile={profile}
             pendingIdeas={ideas}
-            evaluations={evaluations}
+            pendingEvaluations={evaluations}
             activeView={activeView}
           />
         );

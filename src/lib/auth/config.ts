@@ -66,7 +66,17 @@ export const authConfig = {
           // 5. On success, return the user object as a valid User type
           // Ensure role is a valid UserRole (not null or string)
           // You may need to import UserRole type from your types if not already
-          return user;
+          // return user;
+          const profile = await database.findOne("Profile", {
+            email: user.email as string,
+          });
+          return profile;
+          // return {
+          //   id: user.id,
+          //   email: user.email,
+          //   name: user.email,
+          //   role: user.role,
+          // };
         } catch (error) {
           console.error("AUTHORIZE: An unexpected error occurred:", error);
           return null; // Return null to prevent the server from crashing

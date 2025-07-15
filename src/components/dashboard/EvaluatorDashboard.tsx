@@ -1,116 +1,281 @@
 import { Session } from "next-auth";
+import { useState, useEffect } from "react";
 import { useMemo } from "react";
 // import { Idea, Profile, Evaluation } from "@/types/types";
 import type { Idea, Profile, Evaluation } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ClipboardCheck, Star, TrendingUp, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";					import { Badge } from "@/components/ui/badge";
+import { ClipboardCheck, Eye, Star, Clock, CheckCircle } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { IdeaCard } from "./IdeaCard";
+import { EvaluationForm } from "./EvaluationForm";
+import { db } from "@lib/db";
 
 interface EvaluatorDashboardProps {
   user: Session["user"];
   profile: Profile;
   pendingIdeas: Idea[];
-  evaluations: Evaluation[];
+  pendingEvaluations: Evaluation[];
   activeView: string;
 }
 
-export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, profile, pendingIdeas, evaluations, activeView }) => {
-  const stats = useMemo(() => {
-    const avgScore =
-      evaluations.length > 0
-        ? evaluations.reduce((sum, e) => sum + (e.overall_score || 0), 0) /
-          evaluations.length
-        : 0;
+export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, profile, pendingIdeas, pendingEvaluations, activeView }) => {
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
+  const [showEvaluationForm, setShowEvaluationForm] = useState(false);
+  const { t, isRTL } = useLanguage();
 
-    const topRated = evaluations.filter((e) => (e.overall_score || 0) >= 8)
-      .length;
+  const fetchData = async () => {
+    try {
+      // Fetch ideas that are ready for evaluation
+      const ideasData = await db.idea.findMany({
+        where: {
+          status: {
+            in: ['submitted', 'under_review']
+          }
+        },
+        orderBy: {
+          submitted_at: "asc"
+        },
+      });
+      // const { data: ideasData, error: ideasError } = await supabase
+      //   .from("ideas")
+      //   .select("*")
+      //   .in("status", ["submitted", "under_review"])
+      //   .order("submitted_at", { ascending: true });
+
+      if (!ideasData) throw new Error("Failed to fetch ideas");
+      setIdeas(ideasData || []);
+
+      // Fetch evaluator's existing evaluations
+      const evaluationsData = await db.evaluation.findMany({
+        where: {
+          evaluator_id: profile.id,
+        }
+      });
+      // const { data: evaluationsData, error: evaluationsError } = await supabase
+      //   .from("evaluations")
+      //   .select("*")
+      //   .eq("evaluator_id", profile.id);
+
+      if (!evaluationsData) throw new Error("Failed to fetch evaluations");
+      setEvaluations(evaluationsData || []);
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [profile.id]);
+
+  const handleEvaluationSubmitted = () => {
+    setShowEvaluationForm(false);
+    setSelectedIdea(null);
+    fetchData();
+  };
+
+  const handleEvaluateIdea = (idea: Idea) => {
+    setSelectedIdea(idea);
+    setShowEvaluationForm(true);
+  };
+
+  const isIdeaEvaluated = (ideaId: string) => {
+    return evaluations.some(evaluation => evaluation.idea_id === ideaId);
+  };
+
+  const getEvaluationStats = () => {
+    const pendingIdeas = ideas.filter(idea => !isIdeaEvaluated(idea.id));
+    const evaluatedIdeas = ideas.filter(idea => isIdeaEvaluated(idea.id));
 
     return {
+      total: ideas.length,
       pending: pendingIdeas.length,
-      evaluated: evaluations.length,
-      avgScore: Math.round(avgScore * 10) / 10,
-      topRated,
-    };
+      evaluated: evaluatedIdeas.length,
+      totalEvaluations: evaluations.length,
 
-  }, [pendingIdeas, evaluations]);
+    };
+  };
+
+  const stats = getEvaluationStats();
+
+  if (showEvaluationForm && selectedIdea) {
+    return (
+      <EvaluationForm
+        idea={selectedIdea}
+        profile={profile}
+        onEvaluationSubmitted={handleEvaluationSubmitted}
+        database={db}
+      />
+    );
+  }
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Header */}
+      <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+        <div>
+          <h1 className={`text-3xl font-bold ${isRTL ? 'text-right' : 'text-left'}`}>
+            {t('dashboard', 'evaluator_dashboard')}
+          </h1>
+          <p className={`text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+            {t('dashboard', 'review_evaluate_ideas')}
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-            <ClipboardCheck className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.pending}</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <ClipboardCheck className="h-5 w-5 text-blue-600" />
+              <div>
+
+                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard', 'ideas_to_review')}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Evaluated</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.evaluated}</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-5 w-5 text-orange-600" />
+              <div>
+
+                <p className="text-2xl font-bold">{stats.pending}</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard', 'pending_evaluation')}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Score Given</CardTitle>
-            <Star className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.avgScore}/10</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+
+                <p className="text-2xl font-bold">{stats.evaluated}</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard', 'evaluated_today')}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Rated Ideas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.topRated}</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+
+              <Star className="h-5 w-5 text-yellow-600" />
+              <div>
+
+                <p className="text-2xl font-bold">{stats.totalEvaluations}</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard', 'total_evaluations')}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Pending Evaluations</CardTitle>
-          <CardDescription>Ideas waiting for your review</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-2">
-          {pendingIdeas.length > 0 ? (
-            <div className="space-y-4">
-              {pendingIdeas.slice(0, 5).map((idea) => (
-                <div key={idea.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
-                  <div className="flex-1">
-                    <h3 className="font-medium">{idea.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-1">{idea.description}</p>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Badge variant="outline">{idea.category.replace("_", " ")}</Badge>
-                      <Badge variant="secondary">{idea.status.replace("_", " ")}</Badge>
+      {/* Ideas List */}
+      <div>
+        <h2 className={`text-xl font-semibold mb-4 ${isRTL ? 'text-right' : 'text-left'}`}>
+          {t('dashboard', 'ideas_for_evaluation')}
+        </h2>
+
+        {loading ? (
+          <div className="text-center py-8">{t('common', 'loading')}</div>
+        ) : ideas.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <ClipboardCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg font-medium mb-2">{t('dashboard', 'no_ideas_assigned')}</p>
+              <p className="text-muted-foreground">
+                {t('dashboard', 'check_back_later')}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {ideas.map((idea) => {
+              const isEvaluated = isIdeaEvaluated(idea.id);
+              return (
+                <Card key={idea.id} className={isEvaluated ? "opacity-75" : ""}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-lg font-semibold">{idea.title}</h3>
+                          {idea.idea_reference_code && (
+                            <Badge variant="outline" className="text-xs font-mono">
+                              {idea.idea_reference_code}
+                            </Badge>
+                          )}
+                          {isEvaluated && (
+                            <Badge variant="secondary" className="text-xs">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              {t('dashboard', 'evaluated')}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-muted-foreground mb-3 line-clamp-2">
+                          {idea.description}
+                        </p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline">
+                              {idea.category.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                          {idea.submitted_at && (
+                            <span>
+                              {t('dashboard', 'submitted_at')}: {new Date(idea.submitted_at).toLocaleDateString()}
+                            </span>
+                          )}
+                          {idea.average_evaluation_score && idea.average_evaluation_score.toNumber() > 0.0 && (
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-500" />
+                              <span>{idea.average_evaluation_score.toFixed(1)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {!isEvaluated && (
+                          <Button
+                            onClick={() => handleEvaluateIdea(idea)}
+                            className="gap-2"
+                          >
+                            <ClipboardCheck className="h-4 w-4" />
+                            {t('dashboard', 'evaluate')}
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                          {t('dashboard', 'view_details')}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {new Date(idea.created_at!).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No pending ideas</h3>
-              <p className="mt-1 text-sm text-gray-500">You've evaluated all the submitted ideas.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 
