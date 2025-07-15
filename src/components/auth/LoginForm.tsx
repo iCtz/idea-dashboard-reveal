@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { AuthPageTestUserPanel } from "./TestUserPanel";
+import { logger } from '@/lib/logger';
 
 export const AuthPageSignIn = () => {
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export const AuthPageSignIn = () => {
     setLoading(true);
 
     try {
-      console.log("Starting sign in process...");
+      logger.auth("Starting sign in process...");
 
       const result = await signIn("credentials", {
         redirect: false,
@@ -33,13 +34,13 @@ export const AuthPageSignIn = () => {
 
       if (result?.error) throw new Error(`Sign in failed: ${result?.error.toString()}`);
 
-      console.log("Sign in successful");
+      logger.auth("Sign in successful");
       toast({
         title: "Welcome back!",
         description: "Successfully signed in.",
       });
     } catch (error: unknown) {
-      console.error("Sign in error:", error);
+      logger.error("Sign in error:", error as string);
       toast({
         title: "Sign in Error",
         description: (error instanceof Error ? error.message : "Failed to sign in"),

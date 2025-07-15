@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { container } from "@/lib/inversify.config"; // Import the container
 import { TYPES } from "@/types/dbtypes"; // Import TYPES
 import { IDatabase } from "@/database/IDatabase"; // Import IDatabase
+import { logger } from '@/lib/logger';
 
 export const authConfig = {
   adapter: PrismaAdapter(db),
@@ -22,11 +23,11 @@ export const authConfig = {
       // The `authorize` function is where the login validation happens.
       // Any error thrown here will cause the server to crash the request.
       async authorize(credentials) {
-        console.log("AUTHORIZE: Attempting to log in with:", credentials.email);
+        logger.auth("AUTHORIZE: Attempting to log in with:", credentials.email);
 
         // 1. Validate that email and password exist
         if (!credentials?.email || !credentials.password) {
-          console.error("AUTHORIZE: Missing email or password.");
+          logger.error("AUTHORIZE: Missing email or password.");
           return null; // Returning null gracefully fails authentication
         }
 
@@ -37,12 +38,12 @@ export const authConfig = {
           const user = await database.findOne("User", {
               email: credentials.email as string,
           });
-          // console.log("user is: ", user)
+          // logger.log("user is: ", user)
 
           // 3. Check if user was found and has a password
           // IMPORTANT: Ensure your user model has a `hashedPassword` field
           if (!user?.encrypted_password) {
-            console.warn("AUTHORIZE: User not found or has no password:", credentials.email);
+            logger.warn("AUTHORIZE: User not found or has no password:", credentials.email as string);
             return null;
           }
 
@@ -53,11 +54,11 @@ export const authConfig = {
           );
 
           if (!passwordsMatch) {
-            console.warn("AUTHORIZE: Password mismatch for user:", user.email);
+            logger.warn("AUTHORIZE: Password mismatch for user:", user.email);
             return null;
           }
 
-          console.log("AUTHORIZE: Success! User authenticated:", user.email);
+          logger.auth("AUTHORIZE: Success! User authenticated:", user.email);
 
           // 5. On success, return the user object as a valid User type
           // Ensure role is a valid UserRole (not null or string)
@@ -68,7 +69,7 @@ export const authConfig = {
           });
           return profile;
         } catch (error) {
-          console.error("AUTHORIZE: An unexpected error occurred:", error);
+          logger.error("AUTHORIZE: An unexpected error occurred:", error as string);
           return null; // Return null to prevent the server from crashing
         }
       },
@@ -118,7 +119,7 @@ export const authConfig = {
         const database = container.get<IDatabase>(TYPES.IDatabase);
         const userProfile = await database.findOne("Profile", { id: user.id });
         if (userProfile) {
-          console.log("USER Profile", userProfile)
+          logger.auth("USER Profile", userProfile)
           token.role = userProfile.role;
           token.full_name = userProfile.full_name;
           token.department = userProfile.department;

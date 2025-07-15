@@ -1,5 +1,6 @@
 import { PrismaClient, UserRole } from '@prisma/client';
 import { hash } from 'bcryptjs';
+import { logger } from '@/lib/logger';
 
 const prisma = new PrismaClient();
 
@@ -88,7 +89,7 @@ const testUsers = [
 ];
 
 async function main() {
-  console.log('Start seeding...');
+  logger.database('Start seeding...');
   // Use a secure, known password for all test users
   const password = await hash(process.env.NEXT_PUBLIC_TEST_USER_PASSWORD || 'Abdu123+++', 12);
 
@@ -140,15 +141,15 @@ async function main() {
           email_confirmed: true,
         },
       });
-      console.log(`Created/updated user '${u.fullName}' with id: ${user.id}`);
+      logger.database(`Created/updated user '${u.fullName}' with id: ${user.id}`);
     });
   }
-  console.log('Seeding finished.');
+  logger.database('Seeding finished.');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    logger.error(e);
     process.exit(1);
   })
   .finally(async () => {

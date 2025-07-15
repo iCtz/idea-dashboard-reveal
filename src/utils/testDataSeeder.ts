@@ -1,6 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
-
+import { logger } from '@/lib/logger';
 export const seedTestUsers = async () => {
   const testUsers = [
     {
@@ -11,7 +10,7 @@ export const seedTestUsers = async () => {
       department: "Product Development"
     },
     {
-      email: "evaluator@test.com", 
+      email: "evaluator@test.com",
       password: "password123",
       full_name: "Bob Smith",
       role: "evaluator" as const,
@@ -19,16 +18,16 @@ export const seedTestUsers = async () => {
     },
     {
       email: "management@test.com",
-      password: "password123", 
+      password: "password123",
       full_name: "Carol Davis",
       role: "management" as const,
       department: "Executive Leadership"
     }
   ];
 
-  console.log("Test users are available with the following credentials:");
+  logger.debug("Test users are available with the following credentials:");
   testUsers.forEach(user => {
-    console.log(`${user.role}: ${user.email} / ${user.password}`);
+    logger.debug(`${user.role}: ${user.email} / ${user.password}`);
   });
 
   return testUsers;

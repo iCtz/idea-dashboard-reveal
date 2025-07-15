@@ -13,6 +13,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { AuthPageSignIn } from "./LoginForm";
 import { AuthPageSignUp } from "./SignUpForm";
 import { AuthPageHero } from "./AuthHero";
+import { logger } from '@/lib/logger';
 
 export const AuthPage = () => {
   const [loading, setLoading] = useState(false);
@@ -25,7 +26,7 @@ export const AuthPage = () => {
       const adminEmail = "admin@browse.com";
       const adminPassword = process.env.NEXT_PUBLIC_TEST_USER_PASSWORD || "Abdu123+++";
 
-      console.log("Browse as Admin: Starting admin login process");
+      logger.auth("Browse as Admin: Starting admin login process");
 
       // First try to sign in
       const result = await signIn("credentials", {
@@ -38,13 +39,13 @@ export const AuthPage = () => {
         throw new Error("Login failed. Please ensure the database has been seeded correctly.");
       }
 
-      console.log("Browse as Admin: Login successful");
+      logger.auth("Browse as Admin: Login successful");
       toast({
         title: "Browse Mode Active",
         description: "Browsing with full admin privileges - instant access granted!",
       });
     } catch (error: unknown) {
-      console.error("Browse as Admin error:", error);
+      logger.error("Browse as Admin error:", error as string);
       toast({
         title: "Browse Error",
         description: (error instanceof Error ? error.message : "Failed to enter browse mode"),

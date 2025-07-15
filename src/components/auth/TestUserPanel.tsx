@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TestTube, AlertCircle } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { testUsers } from "./constants";
+import { logger } from '@/lib/logger';
 
 export const AuthPageTestUserPanel = () => {
   const [loading, setLoading] = useState(false);
@@ -19,7 +20,7 @@ export const AuthPageTestUserPanel = () => {
   const handleTestLogin = async (testUser: typeof testUsers[0]) => {
     setLoading(true);
     try {
-      console.log(`Attempting login for ${testUser.name} (${testUser.email})`);
+      logger.auth(`Attempting login for ${testUser.name} (${testUser.email})`);
 
       const result = await signIn("credentials",{
         redirect: false,
@@ -31,13 +32,21 @@ export const AuthPageTestUserPanel = () => {
         throw new Error("Login failed. Please ensure you have run the database seed script.");
       }
 
-      console.log("Login successful for", testUser.name);
+      logger.auth("Login successful", {
+        user: testUser.name,
+        role: testUser.role,
+        email: testUser.email
+      });
       toast({
         title: "Login Successful",
         description: `Logged in as ${testUser.name} (${testUser.role})`,
       });
     } catch (error: unknown) {
-      console.error("Login error:", error);
+      logger.error("Test user login failed", "AUTH", {
+        user: testUser.name,
+        email: testUser.email,
+        error: error instanceof Error ? error.message : String(error)
+      });
       toast({
         title: "Login Error",
         description: (error instanceof Error ? error.message : "Failed to login. Please try again."),
