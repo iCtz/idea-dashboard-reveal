@@ -4,7 +4,7 @@
 import { auth } from "@/../auth";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { db } from "@lib/db";
-import type { Idea, Profile, Evaluation } from "@prisma/client";
+import type { Idea, Profile, Evaluation, User } from "@prisma/client";
 import { AuthPage } from "@/components/auth/AuthPage";
 import { LanguageProvider } from "@/contexts/LanguageProvider";
 
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
   return (
     <LanguageProvider>
       <DashboardClient
-        user={session.user}
+        user={session.user as User}
         profile={profile}
         ideas={ideas}
         evaluations={evaluations}

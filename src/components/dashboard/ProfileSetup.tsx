@@ -6,16 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import type { Session } from "next-auth";
-import type { Profile } from "@prisma/client";
+import type { Profile, User } from "@prisma/client";
 import { updateProfile } from "@/app/dashboard/actions";
 
 interface ProfileSetupProps {
-  user: Session["user"];
+  user: User;
+  profile: Profile;
   onProfileUpdate: (profile: Profile) => void;
 }
 
-export function ProfileSetup({ user, onProfileUpdate }: Readonly<ProfileSetupProps>) {
+export function ProfileSetup({ user, profile, onProfileUpdate }: Readonly<ProfileSetupProps>) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -29,8 +29,8 @@ export function ProfileSetup({ user, onProfileUpdate }: Readonly<ProfileSetupPro
 
     startTransition(async () => {
       const result = await updateProfile({
-        id: user.id,
-        email: user.email,
+        id: profile.id,
+        email: profile.email,
         fullName,
         department,
         role,

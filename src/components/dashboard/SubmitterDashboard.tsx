@@ -1,15 +1,14 @@
 
 import { useMemo } from "react";
-import type { Idea, Profile } from "@prisma/client";
+import type { Idea, Profile, User } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb, Clock, CheckCircle, TrendingUp } from "lucide-react";
 import { IdeaSubmissionForm } from "./IdeaSubmissionForm";
 import { IdeaCard } from "./IdeaCard";
-import { Session } from "next-auth";
 
 interface SubmitterDashboardProps {
-  user: Session['user'];
+  user: User;
   profile: Profile;
   initialIdeas: Idea[];
   activeView: string;

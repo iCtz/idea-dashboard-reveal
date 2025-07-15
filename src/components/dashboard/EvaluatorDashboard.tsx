@@ -1,6 +1,5 @@
-import { Session } from "next-auth";
 import { useState } from "react";
-import type { Idea, Profile, Evaluation } from "@prisma/client";
+import type { Idea, Profile, Evaluation, User } from "@prisma/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";					import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Eye, Star, Clock, CheckCircle } from "lucide-react";
@@ -9,7 +8,7 @@ import { EvaluationForm } from "./EvaluationForm";
 import { db } from "@lib/db";
 
 interface EvaluatorDashboardProps {
-  user: Session["user"];
+  user: User;
   profile: Profile;
   pendingIdeas: Idea[];
   pendingEvaluations: Evaluation[];

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { Session } from "next-auth";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SubmitterDashboard } from "./SubmitterDashboard";
@@ -20,7 +19,7 @@ interface DashboardProps {
 }
 
 interface DashboardClientProps {
-  user: Session["user"];
+  user: User;
   profile: Profile | null;
   ideas: Idea[];
   evaluations: Evaluation[];
@@ -80,7 +79,7 @@ export function DashboardClient({
 
   // If the profile is not set up, force the user to complete it.
   if (!profile?.role) {
-    return <ProfileSetup user={user} onProfileUpdate={handleProfileUpdate} />;
+    return <ProfileSetup user={user} profile={profile!} onProfileUpdate={handleProfileUpdate} />;
   }
 
   const renderDashboardByRole = () => {
@@ -102,6 +101,7 @@ export function DashboardClient({
         return (
           <ManagementDashboard
             user={user}
+            profile={profile}
             allIdeas={allIdeas}
             userCount={userCount}
             activeView={activeView}
