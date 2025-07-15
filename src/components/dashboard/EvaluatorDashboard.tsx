@@ -1,13 +1,10 @@
 import { Session } from "next-auth";
-import { useState, useEffect } from "react";
-import { useMemo } from "react";
-// import { Idea, Profile, Evaluation } from "@/types/types";
+import { useState } from "react";
 import type { Idea, Profile, Evaluation } from "@prisma/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";					import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Eye, Star, Clock, CheckCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { IdeaCard } from "./IdeaCard";
 import { EvaluationForm } from "./EvaluationForm";
 import { db } from "@lib/db";
 
@@ -40,11 +37,6 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
           submitted_at: "asc"
         },
       });
-      // const { data: ideasData, error: ideasError } = await supabase
-      //   .from("ideas")
-      //   .select("*")
-      //   .in("status", ["submitted", "under_review"])
-      //   .order("submitted_at", { ascending: true });
 
       if (!ideasData) throw new Error("Failed to fetch ideas");
       setIdeas(ideasData || []);
@@ -55,10 +47,6 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
           evaluator_id: profile.id,
         }
       });
-      // const { data: evaluationsData, error: evaluationsError } = await supabase
-      //   .from("evaluations")
-      //   .select("*")
-      //   .eq("evaluator_id", profile.id);
 
       if (!evaluationsData) throw new Error("Failed to fetch evaluations");
       setEvaluations(evaluationsData || []);
@@ -69,10 +57,6 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchData();
-  }, [profile.id]);
 
   const handleEvaluationSubmitted = () => {
     setShowEvaluationForm(false);

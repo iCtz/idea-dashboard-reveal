@@ -1,5 +1,5 @@
 import { DefaultSession } from "next-auth";
-import { getToken } from "next-auth/jwt";
+import { } from "next-auth/jwt";
 import { UserRole } from "@lib/auth/prisma-enums"; // Import the shared enum type
 
 declare module "next-auth/jwt" {

@@ -8,11 +8,12 @@ const inter = Inter({ subsets: ['latin'] })
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="en">
+      <title>{metadata.title as string}</title>
       <body className={inter.className}>
         <Providers>
           {children}

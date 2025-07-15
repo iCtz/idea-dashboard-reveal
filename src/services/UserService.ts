@@ -1,13 +1,12 @@
 // src/services/UserService.ts
 import { inject, injectable } from "inversify";
 import type { IDatabase } from "@/database/IDatabase";
-// import { Profile } from "@/types/types"; // Assuming you have a Profile type
 import type { Profile } from "@prisma/client";
 import { TYPES } from "@/types/dbtypes";
 
 @injectable() // Mark service as injectable
 export class UserService {
-  private db: IDatabase;
+  private readonly db: IDatabase;
 
   constructor(@inject(TYPES.IDatabase) db: IDatabase) {
     this.db = db;

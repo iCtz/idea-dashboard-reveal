@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
@@ -18,7 +17,6 @@ export const AuthPageSignUp = () => {
   const [fullName, setFullName] = useState("");
   const [activeTab, setActiveTab] = useState("login");
   const { toast } = useToast();
-  const router = useRouter();
   const { t, isRTL } = useLanguage();
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -44,7 +42,7 @@ export const AuthPageSignUp = () => {
     } catch (error: unknown) {
       toast({
         title: "Registration Failed",
-        description: (error instanceof Error ? error.message : "An unexpected error occurred."),
+        description: (error instanceof Error ? error.message : ("An unexpected error occurred in " + activeTab)),
         variant: "destructive",
       });
     } finally {

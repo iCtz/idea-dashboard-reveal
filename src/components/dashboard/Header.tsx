@@ -1,9 +1,8 @@
 
-import { Search, Bell, Filter, User, LogOut } from "lucide-react";
+import { Search, Bell, Filter, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-// import { Profile } from "@/types/types";
 import type { Profile } from "@prisma/client";
 import {
   DropdownMenu,

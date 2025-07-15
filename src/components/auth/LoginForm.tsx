@@ -2,9 +2,7 @@
 "use client";
 
 import { useState } from "react";
-// import { supabase } from "@/integrations/supabase/client";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
@@ -18,7 +16,6 @@ export const AuthPageSignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
-  const router = useRouter();
   const { t, isRTL } = useLanguage();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -28,7 +25,6 @@ export const AuthPageSignIn = () => {
     try {
       console.log("Starting sign in process...");
 
-      // const { error } = await supabase.auth.signInWithPassword({
       const result = await signIn("credentials", {
         redirect: false,
         email,

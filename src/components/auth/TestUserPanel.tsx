@@ -2,9 +2,7 @@
 "use client";
 
 import { useState } from "react";
-// import { supabase } from "@/integrations/supabase/client";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { TestTube, AlertCircle } from "lucide-react";
@@ -14,7 +12,6 @@ import { testUsers } from "./constants";
 export const AuthPageTestUserPanel = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
   const { t, isRTL } = useLanguage();
 
   const testUserPassword = process.env.NEXT_PUBLIC_TEST_USER_PASSWORD || "Abdu123+++";
@@ -56,6 +53,18 @@ export const AuthPageTestUserPanel = () => {
     await handleTestLogin(testUser);
   };
 
+  const buttonColor = (user: typeof testUsers[0]) =>{
+    if (user.role === 'Submitter') {
+      return 'bg-you-blue';
+    } else if (user.role === 'Evaluator') {
+      return 'bg-you-green';
+    } else if (user.role === 'Management') {
+      return 'bg-you-orange';
+    } else {
+      return 'bg-you-purple';
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Quick Access Button */}
@@ -81,18 +90,14 @@ export const AuthPageTestUserPanel = () => {
         <div className="space-y-2">
           {testUsers.map((user, index) => (
               <Button
-                key={index}
+                key={user.role}
                 variant="outline"
                 className={`w-full h-auto p-3 border-gray-200 hover:bg-gray-50 ${isRTL ? 'justify-end text-right' : 'justify-start text-left'}`}
                 onClick={() => handleTestLogin(user)}
                 disabled={loading}
               >
                 <div className={`flex items-center space-x-3 ${isRTL ? 'space-x-reverse' : ''}`}>
-                  <div className={`w-3 h-3 rounded-full ${
-                    user.role === 'Submitter' ? 'bg-you-blue' :
-                    user.role === 'Evaluator' ? 'bg-you-green' :
-                    user.role === 'Management' ? 'bg-you-orange' : 'bg-you-purple'
-                  }`}></div>
+                  <div className={`w-3 h-3 rounded-full ${buttonColor(user)}`}></div>
                   <div>
                     <div className="font-medium text-sm text-gray-900">{user.name}</div>
                     <div className="text-xs text-gray-500">{user.role}</div>

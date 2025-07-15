@@ -6,7 +6,6 @@ import bcrypt from "bcryptjs";
 import { container } from "@/lib/inversify.config"; // Import the container
 import { TYPES } from "@/types/dbtypes"; // Import TYPES
 import { IDatabase } from "@/database/IDatabase"; // Import IDatabase
-import { LoginSchema } from "./schemas";
 
 export const authConfig = {
   adapter: PrismaAdapter(db),
@@ -24,9 +23,6 @@ export const authConfig = {
       // Any error thrown here will cause the server to crash the request.
       async authorize(credentials) {
         console.log("AUTHORIZE: Attempting to log in with:", credentials.email);
-        // console.log("bcrypt pass: ", await bcrypt.hash('test', 10));
-
-        const validatedFields = LoginSchema.safeParse(credentials);
 
         // 1. Validate that email and password exist
         if (!credentials?.email || !credentials.password) {
@@ -71,12 +67,6 @@ export const authConfig = {
             email: user.email as string,
           });
           return profile;
-          // return {
-          //   id: user.id,
-          //   email: user.email,
-          //   name: user.email,
-          //   role: user.role,
-          // };
         } catch (error) {
           console.error("AUTHORIZE: An unexpected error occurred:", error);
           return null; // Return null to prevent the server from crashing

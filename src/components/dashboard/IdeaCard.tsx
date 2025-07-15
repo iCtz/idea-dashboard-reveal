@@ -1,8 +1,7 @@
-// import { Idea } from "@/types/types";
 import type { Idea } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, DollarSign } from "lucide-react";
+import { Calendar, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 
 interface IdeaCardProps {
@@ -92,7 +91,6 @@ export const IdeaCard = ({ idea, detailed = false }: IdeaCardProps) => {
         <div className="flex items-center justify-between mt-4 pt-4 border-t text-xs text-gray-500">
           <div className="flex items-center">
             <Calendar className="h-3 w-3 mr-1" />
-            {/* {format(new Date(idea.created_at!), "MMM d, yyyy")} */}
             {idea.created_at ? format(new Date(idea.created_at), "MMM d, yyyy") : "No date"}
           </div>
           {idea.strategic_alignment_score && (

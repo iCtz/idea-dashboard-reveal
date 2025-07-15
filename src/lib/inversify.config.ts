@@ -7,7 +7,6 @@ import { PostgresDatabase } from "@/database/PostgresDatabase";
 import { SupabaseDatabase } from "@/database/SupabaseDatabase";
 import { IDatabase } from "@/database/IDatabase";
 import { TYPES, DatabaseConfig } from "@/types/dbtypes"; // Import DatabaseConfig and TYPES
-import { db } from "./db";
 
 const container = new Container();
 
@@ -25,11 +24,9 @@ container.bind(TYPES.PrismaClient).toConstantValue(new PrismaClient());
 if (process.env.USE_LOCAL_AUTH === "true") {
   console.log("Using local Postgres database.");
   container.bind<IDatabase>(TYPES.IDatabase).to(PostgresDatabase).inSingletonScope();
-  // container.bind<IDatabase>(TYPES.IDatabase).to(PostgresDatabase).inSingletonScope().whenInjectedInto(UserService, IdeaService); // Specify injection targets
 } else {
   console.log("Using Supabase database.");
   container.bind<IDatabase>(TYPES.IDatabase).to(SupabaseDatabase).inSingletonScope();
-  // container.bind<IDatabase>(TYPES.IDatabase).to(SupabaseDatabase).inSingletonScope().whenInjectedInto(UserService, IdeaService); // Specify injection targets
 }
 
 container.bind<UserService>(TYPES.UserService).to(UserService);

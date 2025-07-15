@@ -2,9 +2,7 @@
 "use client";
 
 import { useState } from "react";
-// import { supabase } from "@/integrations/supabase/client";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,7 +17,6 @@ import { AuthPageHero } from "./AuthHero";
 export const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
   const { t, isRTL } = useLanguage();
 
   const handleBrowseAsAdmin = async () => {

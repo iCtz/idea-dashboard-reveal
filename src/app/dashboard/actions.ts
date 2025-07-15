@@ -25,21 +25,20 @@ export async function updateProfile(payload: UpdateProfilePayload) {
     if (existingProfile) {
       // If the profile exists, update it
       await database.update("Profile", { id }, {
-        full_name: payload.fullName,
-        department: payload.department,
-        role: payload.role,
+        full_name: data.fullName,
+        department: data.department,
+        role: data.role,
       });
     } else {
       // If the profile doesn't exist, create it
-      // await database.create("Profile", {
-      //   // id: payload.id,
-      //   email: payload.email,
-      //   full_name: payload.fullName,
-      //   department: payload.department,
-      //   role: payload.role,
-      //   name: null,
-      //   password: null
-      // });
+      await database.create("Profile", {
+        // id: payload.id,
+        email: payload.email,
+        full_name: payload.fullName,
+        department: payload.department,
+        role: payload.role,
+        email_confirmed: true,
+      });
     }
 
     // Revalidate the path to ensure the UI updates with the new profile info.

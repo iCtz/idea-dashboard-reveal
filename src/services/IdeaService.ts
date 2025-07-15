@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import { inject, injectable } from "inversify";
 import type { IDatabase } from "@/database/IDatabase";
-// import { Idea } from "@/types/types";
 import type { Idea } from "@prisma/client";
 import { TYPES } from "@/types/dbtypes";
 import { IdeaCategory } from "@prisma/client";
@@ -18,7 +17,7 @@ interface CreateIdeaPayload {
 
 @injectable()
 export class IdeaService {
-  constructor(@inject(TYPES.IDatabase) private db: IDatabase) {}
+  constructor(@inject(TYPES.IDatabase) private readonly db: IDatabase) {}
 
   public async createIdea(payload: CreateIdeaPayload): Promise<Idea> {
     const { submitterId, ...ideaData } = payload;
@@ -41,6 +40,6 @@ export class IdeaService {
       pricing_offer_url: null,
       prototype_images_urls: [],
       current_stage: null
-    }) as Promise<Idea>;
+    });
   }
 }

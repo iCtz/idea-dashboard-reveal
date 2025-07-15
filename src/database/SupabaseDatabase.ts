@@ -17,7 +17,7 @@ import {
 
 @injectable()
 export class SupabaseDatabase implements IDatabase {
-  private supabase: SupabaseClient;
+  private readonly supabase: SupabaseClient;
 
   constructor() {
     const supabaseUrl = process.env.SUPABASE_URL || "";
@@ -53,9 +53,8 @@ export class SupabaseDatabase implements IDatabase {
     if (orderBy) {
       // This is a simplification. Prisma's orderBy is more complex than Supabase's.
       const key = Object.keys(orderBy)[0];
-      const value = (orderBy as any)[key];
       const ascending = orderBy[key] === "asc";
-      query = query.order(key as string, { ascending });
+      query = query.order(key, { ascending });
     }
 
     const { data, error } = await query;

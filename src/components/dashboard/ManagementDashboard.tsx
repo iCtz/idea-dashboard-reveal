@@ -1,6 +1,5 @@
 import { useMemo } from "react";
-// import { Idea, Profile } from "@/types/types";
-import type { Idea, Profile } from "@prisma/client";
+import type { Idea } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Users, Lightbulb, CheckCircle, Clock, Target } from "lucide-react";
@@ -161,7 +160,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
                   dataKey="value"
                 >
                   {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeOpacity={0.5}/>
+                    <Cell key={`cell-${entry.name}`} fill={COLORS[index % COLORS.length]} strokeOpacity={0.5}/>
                   ))}
                 </Pie>
                 <Tooltip />

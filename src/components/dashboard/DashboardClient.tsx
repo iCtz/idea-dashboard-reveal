@@ -9,7 +9,7 @@ import { EvaluatorDashboard } from "./EvaluatorDashboard";
 import { ManagementDashboard } from "./ManagementDashboard";
 import { ProfileSetup } from "./ProfileSetup";
 import type { Idea, Profile, Evaluation, User } from "@prisma/client";
-import { seedSampleData, forceSeedSampleData } from "@/utils/sampleDataSeeder";
+import { forceSeedSampleData } from "@/utils/sampleDataSeeder";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ export function DashboardClient({
   evaluations,
   allIdeas,
   userCount,
-}: DashboardClientProps) {
+}: Readonly<DashboardClientProps>) {
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
@@ -50,6 +50,8 @@ export function DashboardClient({
 
   const handleForceSeed = async () => {
     setSeeding(true);
+    setLoading(true);
+
     try {
       await forceSeedSampleData();
       toast({
@@ -77,7 +79,7 @@ export function DashboardClient({
   }
 
   // If the profile is not set up, force the user to complete it.
-  if (!profile || !profile.role) {
+  if (!profile?.role) {
     return <ProfileSetup user={user} onProfileUpdate={handleProfileUpdate} />;
   }
 
@@ -86,15 +88,6 @@ export function DashboardClient({
     const userRole = user.role || profile.role;
 
     switch (userRole) {
-      case "submitter":
-        return (
-          <SubmitterDashboard
-            user={user}
-            profile={profile}
-            initialIdeas={ideas}
-            activeView={activeView}
-          />
-        );
       case "evaluator":
         return (
           <EvaluatorDashboard

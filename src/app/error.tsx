@@ -14,10 +14,10 @@ import { ServerCrash } from "lucide-react";
 export default function GlobalError({
   error,
   reset,
-}: {
+}: Readonly<{
   error: Error & { digest?: string };
   reset: () => void;
-}) {
+}>) {
   useEffect(() => {
     // You can log the error to an error reporting service here
     console.error(error);

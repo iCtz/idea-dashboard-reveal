@@ -1,10 +1,9 @@
 
 import { useMemo } from "react";
-// import { Idea, Profile } from "@/types/types";
 import type { Idea, Profile } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb, Clock, CheckCircle, XCircle, TrendingUp } from "lucide-react";
+import { Lightbulb, Clock, CheckCircle, TrendingUp } from "lucide-react";
 import { IdeaSubmissionForm } from "./IdeaSubmissionForm";
 import { IdeaCard } from "./IdeaCard";
 import { Session } from "next-auth";
@@ -16,7 +15,6 @@ interface SubmitterDashboardProps {
   activeView: string;
 }
 
-// export const SubmitterDashboard = ({ profile, activeView }: SubmitterDashboardProps) => {
 export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, profile, initialIdeas, activeView }) => {
   // The ideas are now passed as props, no need for local state to hold them.
   const ideas = initialIdeas;
