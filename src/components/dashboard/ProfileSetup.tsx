@@ -1,12 +1,12 @@
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import type { Profile, User } from "@prisma/client";
+import type { Profile, User, UserRole } from "@prisma/client";
 import { updateProfile } from "@/app/dashboard/actions";
 
 interface ProfileSetupProps {
@@ -17,12 +17,26 @@ interface ProfileSetupProps {
 
 export function ProfileSetup({ user, profile, onProfileUpdate }: Readonly<ProfileSetupProps>) {
   const [isPending, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState(profile.full_name || "");
+  const [department, setDepartment] = useState("");
+  const [role, setRole] = useState<UserRole>("submitter");
   const { toast } = useToast();
 
   const handleSubmit = async (formData: FormData) => {
-    const fullName = formData.get("fullName") as string;
-    const department = formData.get("department") as string;
-    const role = formData.get("role") as "submitter" | "evaluator" | "management";
+    setLoading(true);
+    setFullName(
+      formData.get("fullName") as string,
+    );
+
+    setDepartment(
+      formData.get("department") as string,
+    );
+
+    setRole(
+      formData.get("role") as UserRole,
+    );
+
     if (!fullName || !role || !user.id || !user.email) {
       return;
     }
@@ -33,7 +47,7 @@ export function ProfileSetup({ user, profile, onProfileUpdate }: Readonly<Profil
         email: profile.email,
         fullName,
         department,
-        role,
+        role: role as string as "submitter" | "evaluator" | "management",
       });
 
     if (result?.error) {
@@ -66,9 +80,10 @@ export function ProfileSetup({ user, profile, onProfileUpdate }: Readonly<Profil
               <Label htmlFor="fullName">Full Name</Label>
               <Input
                 id="fullName"
-                name="fullName"
                 type="text"
                 placeholder="Enter your full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 required
               />
             </div>
@@ -77,15 +92,16 @@ export function ProfileSetup({ user, profile, onProfileUpdate }: Readonly<Profil
               <Label htmlFor="department">Department</Label>
               <Input
                 id="department"
-                name="department"
                 type="text"
                 placeholder="Enter your department"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select name="role" required>
+              <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
@@ -98,7 +114,7 @@ export function ProfileSetup({ user, profile, onProfileUpdate }: Readonly<Profil
             </div>
 
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Saving..." : "Complete Setup"}
+              {(isPending || loading) ? "Setting up..." : "Complete Setup"}
             </Button>
           </form>
         </CardContent>
