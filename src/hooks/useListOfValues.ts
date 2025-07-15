@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export interface ListOfValue {
   id: number;
@@ -8,7 +8,7 @@ export interface ListOfValue {
   value_key: string;
   value_en: string;
   value_ar: string;
-  is_active: boolean;
+  is_active: boolean | null;
 }
 
 export const useListOfValues = (listKey: string) => {

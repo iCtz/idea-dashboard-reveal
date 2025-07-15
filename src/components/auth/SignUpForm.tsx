@@ -8,7 +8,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export const AuthPageSignUp = () => {
   const [loading, setLoading] = useState(false);

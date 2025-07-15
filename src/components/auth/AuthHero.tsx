@@ -2,7 +2,7 @@
 "use client";
 
 import { Lightbulb, Users, BarChart3, Zap } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export const AuthPageHero = () => {
   const { t, isRTL } = useLanguage();

@@ -6,7 +6,7 @@ import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { db } from "@lib/db";
 import type { Idea, Profile, Evaluation } from "@prisma/client";
 import { AuthPage } from "@/components/auth/AuthPage";
-import { LanguageProvider } from "@/contexts/LanguageContext";
+import { LanguageProvider } from "@/contexts/LanguageProvider";
 
 /**
  * This is the main secure entry point for the dashboard.

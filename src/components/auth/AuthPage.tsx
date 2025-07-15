@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { UserCog } from "lucide-react";
 import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { AuthPageSignIn } from "./LoginForm";
 import { AuthPageSignUp } from "./SignUpForm";
 import { AuthPageHero } from "./AuthHero";

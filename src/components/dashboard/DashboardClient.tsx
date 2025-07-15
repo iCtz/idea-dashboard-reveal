@@ -11,7 +11,7 @@ import { ProfileSetup } from "./ProfileSetup";
 import type { Idea, Profile, Evaluation, User } from "@prisma/client";
 import { forceSeedSampleData } from "@/utils/sampleDataSeeder";
 import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Database } from "lucide-react";
 

@@ -5,12 +5,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { ClipboardCheck, Star } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import type { Idea, Profile, Evaluation, PrismaClient } from "@prisma/client";
-import { IDatabase, ModelName } from "@/database/IDatabase"; // Import IDatabase
-import { db } from "@lib/db";
+import type { Idea, Profile, PrismaClient } from "@prisma/client";
 
 interface EvaluationFormProps {
   idea: Idea;
@@ -82,7 +80,7 @@ export const EvaluationForm = ({ idea, profile, onEvaluationSubmitted, database 
           <div className={`flex items-center space-x-2 ${isRTL ? 'space-x-reverse' : ''}`}>
             <ClipboardCheck className="h-6 w-6 text-blue-600" />
             <CardTitle className={isRTL ? 'text-right' : 'text-left'}>
-              Evaluate Idea
+              ${t('dashboard', 'evaluate') ?? 'Evaluate Idea'}
             </CardTitle>
           </div>
           <CardDescription className={isRTL ? 'text-right' : 'text-left'}>
