@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+import { db } from "@lib/db";
+import { logger } from "@/lib/logger";
 
 export interface ListOfValue {
   id: number;
@@ -19,17 +20,20 @@ export const useListOfValues = (listKey: string) => {
   useEffect(() => {
     const fetchValues = async () => {
       try {
-        const { data, error } = await supabase
-          .from("list_of_values")
-          .select("*")
-          .eq("list_key", listKey)
-          .eq("is_active", true)
-          .order("value_ar"); // Order by Arabic by default
+        const valuesData = await db.listOfValue.findMany({
+          where: {
+            list_key: listKey,
+            is_active: true,
+          },
+          orderBy: {
+            value_ar: 'asc',
+          },
+        }); // Order by Arabic by default
 
-        if (error) throw error;
-        setData(data || []);
+        if (!valuesData) throw new Error('No data found');
+        setData(valuesData || []);
       } catch (error) {
-        console.error("Error fetching list of values:", error);
+        logger.error("Error fetching list of values:", error as string);
       } finally {
         setLoading(false);
       }

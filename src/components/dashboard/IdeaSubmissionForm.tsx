@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
-import type { Profile } from "@prisma/client";
+import type { Profile, ListOfValue } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,7 +163,7 @@ const CategoryFields = ({ formData, handleChange, strategicAlignment, setStrateg
   handleChange: (field: string, value: string) => void;
   strategicAlignment: string[];
   setStrategicAlignment: (value: string[]) => void;
-  strategicAlignmentOptions: { value: string; label: string }[];
+  strategicAlignmentOptions: ListOfValue[];
   lovLoading: boolean;
   isRTL: boolean;
   t: (namespace: string, key: string) => string;
@@ -477,7 +477,7 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
               handleChange={handleChange}
               strategicAlignment={strategicAlignment}
               setStrategicAlignment={setStrategicAlignment}
-              strategicAlignmentOptions={strategicAlignmentOptions}
+              strategicAlignmentOptions={strategicAlignmentOptions.values as unknown as ListOfValue[]}
               lovLoading={lovLoading}
               isRTL={isRTL}
               t={t}

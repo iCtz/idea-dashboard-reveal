@@ -21,3 +21,4 @@ export type Session = Prisma.SessionGetPayload<object>;
 
 export type Identity = Prisma.IdentityGetPayload<object>;
 
+export type ListOfValue = Prisma.ListOfValueGetPayload<object>;

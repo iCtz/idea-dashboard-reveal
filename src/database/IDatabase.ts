@@ -1,9 +1,9 @@
 
-import { Idea, IdeaAttachment, Profile, Evaluation, Translation, User, Session, Identity } from "@/types/types"; // Adjust the import path as needed.
+import { Idea, IdeaAttachment, Profile, Evaluation, Translation, User, Session, Identity, ListOfValue } from "@/types/types"; // Adjust the import path as needed.
 
 // Define your model names as a union type
 export type ModelName =
-  "Idea" | "IdeaAttachment" | "Profile" | "Evaluation" | "translations" | "User" | "Session" | "Identity"; // Add auth models as needed
+  "Idea" | "IdeaAttachment" | "Profile" | "Evaluation" | "translations" | "User" | "Session" | "Identity" | "ListOfValue"; // Add auth models as needed
 
 // Map model names to their respective types
 export type ModelType<T extends ModelName> =
@@ -15,6 +15,7 @@ export type ModelType<T extends ModelName> =
   : T extends "User" ? User
   : T extends "Session" ? Session
   : T extends "Identity" ? Identity
+  : T extends "ListOfValue" ? ListOfValue
   : never;
 
 // --- ORM-Agnostic Generic Types ---
