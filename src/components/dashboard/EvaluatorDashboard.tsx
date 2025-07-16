@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Idea, Profile, Evaluation, User } from "@prisma/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";					import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Eye, Star, Clock, CheckCircle } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { EvaluationForm } from "./EvaluationForm";
