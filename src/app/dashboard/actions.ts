@@ -57,14 +57,18 @@ export async function createIdea(payload: {
   implementationCost: number | null;
   expectedRoi: number | null;
   strategicAlignmentScore: number | null;
+  status: string,
+  language: string,
 }) {
   try {
     // Resolve the IdeaService from the container
     const ideaService = container.get<IdeaService>(TYPES.IdeaService);
     // Delegate the creation logic to the service
-    await ideaService.createIdea(payload);
+    const createdIdea = await ideaService.createIdea(payload);
 
     revalidatePath("/dashboard");
+
+    return { success: true, ideaId: createdIdea.id };
   } catch (error) {
     console.error("Failed to create idea:", error);
     return { error: "Failed to submit idea.", details: (error as Error).message || "Unknown error" };
