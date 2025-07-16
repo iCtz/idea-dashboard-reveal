@@ -26,7 +26,8 @@ class Logger {
 
   private formatMessage(level: LogLevel, message: string, context?: string, data?: unknown): string {
     const timestamp = this.formatTimestamp();
-    const prefix = `[${timestamp}] [${level.toUpperCase()}]${context ? ` [${context}]` : ''}`;
+    const contextPart = context ? ` [${context}]` : '';
+    const prefix = `[${timestamp}] [${level.toUpperCase()}]${contextPart}`;
 
     if (data) {
       return `${prefix} ${message} | Data: ${JSON.stringify(data, null, 2)}`;
