@@ -1,9 +1,10 @@
 import "reflect-metadata";
 import { inject, injectable } from "inversify";
 import type { IDatabase } from "@/database/IDatabase";
-import type { Idea, IdeaCategory, IdeaStatus } from "@prisma/client";
+import type { AttachmentFileType, Idea, IdeaCategory, IdeaStatus, IdeaAttachment } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import { TYPES } from "@/types/dbtypes";
+import { logger } from "@lib/logger";
 
 export interface CreateIdeaPayload {
   title: string;
@@ -52,5 +53,31 @@ export class IdeaService {
       current_stage: null,
       strategic_alignment: payload.strategicAlignment,
     });
+  }
+
+  public async createIdeaWithFiles(
+    payload: CreateIdeaPayload,
+    attachments: { url: string; type: AttachmentFileType }[],
+    tx?: IDatabase // Accept abstract transaction
+  ) {
+
+    const idea = await this.createIdea(payload);
+
+    const start = Date.now();
+
+    this.db.transaction(async (tx) => {
+      await this.db.createMany("IdeaAttachment",
+        attachments.map(att => ({
+          idea_id: idea.id,
+          file_url: att.url,       // Required field
+          file_type: att.type,     // Required field
+          file_name: att.url.split('/').pop() || null, // Optional but recommended
+          uploaded_by: payload.submitterId,
+          created_at: new Date(),  // Required by Prisma
+        }))
+      );
+    });
+    logger.performance(`Transaction`, start);
+    return idea;
   }
 }

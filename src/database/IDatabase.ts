@@ -68,4 +68,13 @@ export interface IDatabase {
     where: WhereUnique<ModelType<T>>,
     data: UpdateData<ModelType<T>>
   ): Promise<ModelType<T>>;
+
+  transaction<T>(
+    fn: (tx: IDatabase) => Promise<T>
+  ): Promise<T>;
+
+  createMany<T extends ModelName>(
+    model: T,
+    data: CreateData<ModelType<T>>[]
+  ): Promise<ModelType<T>[]>;
 }

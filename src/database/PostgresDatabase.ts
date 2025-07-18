@@ -15,10 +15,12 @@ import {
   UpdateData,
 } from "./IDatabase"; // Adjust path to your IDatabase interface file
 import { TYPES, type DatabaseConfig } from "@/types/dbtypes";
+import { PostgresTransactionDatabase } from "./PostgresTransactionDatabase";
 
 @injectable()
 export class PostgresDatabase implements IDatabase {
-  private readonly prisma: PrismaClient;
+  // private readonly prisma: PrismaClient;
+  protected prisma: PrismaClient; // Changed from private to protected
 
   constructor(@inject(TYPES.DatabaseConfig) config: DatabaseConfig) {
     this.prisma = new PrismaClient({
@@ -49,16 +51,16 @@ export class PostgresDatabase implements IDatabase {
   //   }
   //   return prismaModel;
   // }
-  private getModel<T extends ModelName>(model: T) {
-    type Delegate = T extends "Profile" ? Prisma.ProfileDelegate
-      : T extends "Idea" ? Prisma.IdeaDelegate
-      : T extends "Evaluation" ? Prisma.EvaluationDelegate
-      : T extends "IdeaComment" ? Prisma.IdeaCommentDelegate
-      : T extends "IdeaAttachment" ? Prisma.IdeaAttachmentDelegate
-      : never;
+  // private getModel<T extends ModelName>(model: T) {
+  //   type Delegate = T extends "Profile" ? Prisma.ProfileDelegate
+  //     : T extends "Idea" ? Prisma.IdeaDelegate
+  //     : T extends "Evaluation" ? Prisma.EvaluationDelegate
+  //     : T extends "IdeaComment" ? Prisma.IdeaCommentDelegate
+  //     : T extends "IdeaAttachment" ? Prisma.IdeaAttachmentDelegate
+  //     : never;
 
-    return this.prisma[model.toLowerCase() as keyof PrismaClient] as Delegate;
-  }
+  //   return this.prisma[model.toLowerCase() as keyof PrismaClient] as Delegate;
+  // }
 
 	async query<T>(queryString: string, params: unknown[]): Promise<T[]> {
     return this.prisma.$queryRawUnsafe<T[]>(queryString, ...params);
@@ -112,6 +114,24 @@ export class PostgresDatabase implements IDatabase {
   ): Promise<ModelType<T>> {
     const delegate = (this.prisma as any)[model.toLowerCase()];
     return delegate.update({ where, data: data as Prisma.XOR<any, any> });
+  }
+
+  async transaction<T>(fn: (tx: IDatabase) => Promise<T>): Promise<T> {
+    if (!('$transaction' in this.prisma)) {
+      throw new Error("Transaction not supported on this client");
+    }
+    return (this.prisma as PrismaClient).$transaction(async (prismaTx) => {
+      const txDatabase = new PostgresTransactionDatabase(prismaTx);
+      return fn(txDatabase);
+    });
+  }
+
+  async createMany<T extends ModelName>(
+    model: T,
+    data: CreateData<ModelType<T>>[]
+  ): Promise<ModelType<T>[]> {
+    const delegate = (this.prisma as any)[model.toLowerCase()];
+    return delegate.createMany({ data: data as Prisma.XOR<any, any> });
   }
 }
 

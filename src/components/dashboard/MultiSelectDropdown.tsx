@@ -98,7 +98,7 @@ export const MultiSelectDropdown = ({
         <div role="listbox" className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto">
           {options.map((option) => (
             <button
-            key={option.value}
+              key={option.value}
               type="button"
               role="option"
               aria-selected={value.includes(option.value)}

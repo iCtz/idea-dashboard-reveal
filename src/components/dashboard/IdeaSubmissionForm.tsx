@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Lightbulb } from "lucide-react";
-import { createIdea, type CreateIdeaPayload } from "@/app/dashboard/actions";
+import { createIdeaWithFiles, type CreateIdeaPayload } from "@/app/dashboard/actions";
 import { IdeaCategory } from "@prisma/client";
 import { FileUploadField } from "./FileUploadField";
 import { MultiSelectDropdown } from "./MultiSelectDropdown";
@@ -329,55 +329,6 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
     }
   }, [lovError, toast]);
 
-  const uploadFile = async (file: File, ideaId: string, fileType: string) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${ideaId}/${fileType}/${Date.now()}.${fileExt}`;
-    return `placeholder-url/${fileName}`;
-  };
-
-  const createAttachmentPromises = async (files: File[], ideaId: string, fileType: string) => {
-    const promises = [];
-    for (const file of files) {
-      const fileUrl = await uploadFile(file, ideaId, fileType);
-      promises.push(
-        fetch('/api/attachments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            idea_id: ideaId,
-            file_type: fileType,
-            file_name: file.name,
-            file_url: fileUrl,
-            uploaded_by: profile.id,
-          })
-        })
-      );
-    }
-    return promises;
-  };
-
-  const handleFileUploads = async (ideaId: string) => {
-    const hasFiles = feasibilityFiles.length > 0 || pricingFiles.length > 0 || prototypeFiles.length > 0;
-    if (!hasFiles) return;
-
-    try {
-      const attachmentPromises = [
-        ...await createAttachmentPromises(feasibilityFiles, ideaId, 'feasibility'),
-        ...await createAttachmentPromises(pricingFiles, ideaId, 'pricing_offer'),
-        ...await createAttachmentPromises(prototypeFiles, ideaId, 'prototype')
-      ];
-
-      await Promise.all(attachmentPromises);
-    } catch (uploadError) {
-      logger.error("Error uploading files:", (uploadError as Error).message);
-      toast({
-        title: "Warning",
-        description: "Idea submitted but some files failed to upload",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleSuccessfulSubmission = (status: 'draft' | 'submitted') => {
     toast({
       title: t('common', 'success'),
@@ -412,6 +363,9 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
     setLoading(true);
     setFormErrors({});
 
+    const scoreStr = formData.strategic_alignment_score;
+    const parsedScore = parseInt(scoreStr, 10);
+
     const payload: CreateIdeaPayload = {
       title: formData.title,
       description: formData.description,
@@ -419,22 +373,31 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
       submitterId: profile.id,
       implementationCost: formData.implementation_cost ? new Decimal(formData.implementation_cost) : null,
       expectedRoi: formData.expected_roi ? new Decimal(formData.expected_roi) : null,
-      strategicAlignmentScore: formData.strategic_alignment_score ? parseInt(formData.strategic_alignment_score) : 1,
+      strategicAlignmentScore: scoreStr && !isNaN(parsedScore) ? parsedScore : 1,
       status,
       strategicAlignment,
       language,
     };
+
+    // const ideaFormData = new FormData();
+    // ideaFormData.append('payload', JSON.stringify(payload));
+    // feasibilityFiles.forEach(file => ideaFormData.append('feasibility', file));
+    // pricingFiles.forEach(file => ideaFormData.append('pricing', file));
+    // prototypeFiles.forEach(file => ideaFormData.append('prototype', file));
+    const files = [
+      ...feasibilityFiles.map(file => ({ type: 'feasibility', file })),
+      ...pricingFiles.map(file => ({ type: 'pricing', file })),
+      ...prototypeFiles.map(file => ({ type: 'prototype', file })),
+    ];
+
+
     startTransition(async () => {
       try {
-        const result = await createIdea(payload);
+        const result = await createIdeaWithFiles(payload, files);
 
         if (result?.error) {
           handleSubmissionError(result);
           return;
-        }
-
-        if (result?.ideaId) {
-          await handleFileUploads(result.ideaId);
         }
 
         handleSuccessfulSubmission(status);

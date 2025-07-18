@@ -7,9 +7,10 @@ import { container } from "@/lib/inversify.config";
 import { IdeaService, type CreateIdeaPayload } from "@/services/IdeaService";
 import { TYPES } from "@/types/dbtypes";
 import { logger } from "@/lib/logger";
-import { IdeaCategory, IdeaStatus } from "@prisma/client";
+import { AttachmentFileType, IdeaCategory, IdeaStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { Decimal } from "@prisma/client/runtime/library";
+import { uploadAllFiles } from "@/utils/upload";
 
 interface UpdateProfilePayload {
   id: string;
@@ -76,6 +77,30 @@ export async function createIdea(payload: CreateIdeaPayload) {
     const ideaService = container.get<IdeaService>(TYPES.IdeaService);
     // Delegate the creation logic to the service
     const createdIdea = await ideaService.createIdea(validatedPayload);
+
+
+    revalidatePath("/dashboard");
+
+    return { success: true, ideaId: createdIdea.id };
+  } catch (error) {
+    logger.error("Failed to create idea:", (error as Error).message);
+    if (error instanceof z.ZodError) {
+      return { error: "Invalid form data.", details: error.flatten().fieldErrors };
+    }
+    return { error: "Failed to submit idea.", details: (error as Error).message || "Unknown error" };
+  }
+}
+
+export async function createIdeaWithFiles(
+  ideaPayload: CreateIdeaPayload,
+  files: { type: string; file: File }[]
+) {
+  try {
+    const attachments = await uploadAllFiles(files); // Extract to a helper
+    const validatedPayload = CreateIdeaSchema.parse(ideaPayload);
+    const ideaService = container.get<IdeaService>(TYPES.IdeaService);
+    // Delegate the creation logic to the service
+    const createdIdea = await ideaService.createIdeaWithFiles(ideaPayload, attachments);
 
 
     revalidatePath("/dashboard");
