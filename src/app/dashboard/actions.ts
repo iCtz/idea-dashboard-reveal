@@ -9,10 +9,11 @@ import { TYPES } from "@/types/dbtypes";
 import { logger } from "@/lib/logger";
 import { IdeaCategory, IdeaStatus } from "@prisma/client";
 import { db } from "@/lib/db";
+import { Decimal } from "@prisma/client/runtime/library";
 
 interface UpdateProfilePayload {
   id: string;
-  email: string;
+  email: string; // Add missing email field
   fullName: string;
   department: string;
   role: "submitter" | "evaluator" | "management";
@@ -22,6 +23,13 @@ const CreateIdeaSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters long."),
   description: z.string().min(10, "Description must be at least 10 characters long."),
   category: z.nativeEnum(IdeaCategory),
+  submitterId: z.string().uuid(),
+  implementationCost: z.string().transform(val => val ? new Decimal(val) : null).nullable().optional(),
+  expectedRoi: z.string().transform(val => val ? new Decimal(val) : null).nullable().optional(),
+  strategicAlignmentScore: z.number().int().min(1).max(10),
+  status: z.nativeEnum(IdeaStatus),
+  language: z.string().min(2),
+  strategicAlignment: z.array(z.string()),
 });
 
 export async function updateProfile(payload: UpdateProfilePayload) {
@@ -62,17 +70,12 @@ export async function updateProfile(payload: UpdateProfilePayload) {
 export async function createIdea(payload: CreateIdeaPayload) {
   try {
     // Validate essential fields before passing to the service
-    const { title, description, category } = CreateIdeaSchema.parse(payload);
+    const validatedPayload = CreateIdeaSchema.parse(payload);
 
     // Resolve the IdeaService from the container
     const ideaService = container.get<IdeaService>(TYPES.IdeaService);
     // Delegate the creation logic to the service
-    const createdIdea = await ideaService.createIdea({
-      ...payload,
-      title,
-      description,
-      category,
-    });
+    const createdIdea = await ideaService.createIdea(validatedPayload);
 
 
     revalidatePath("/dashboard");

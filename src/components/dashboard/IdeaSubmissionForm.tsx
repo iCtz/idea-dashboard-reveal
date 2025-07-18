@@ -417,10 +417,11 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
       description: formData.description,
       category: formData.category as IdeaCategory,
       submitterId: profile.id,
-      implementationCost: formData.implementation_cost ? parseFloat(formData.implementation_cost) as unknown as Decimal : null,
-      expectedRoi: formData.expected_roi ? parseFloat(formData.expected_roi) as unknown as Decimal : null,
-      strategicAlignmentScore: formData.strategic_alignment_score ? parseInt(formData.strategic_alignment_score) : null,
+      implementationCost: formData.implementation_cost ? new Decimal(formData.implementation_cost) : null,
+      expectedRoi: formData.expected_roi ? new Decimal(formData.expected_roi) : null,
+      strategicAlignmentScore: formData.strategic_alignment_score ? parseInt(formData.strategic_alignment_score) : 1,
       status,
+      strategicAlignment,
       language,
     };
     startTransition(async () => {

@@ -15,6 +15,7 @@ export interface CreateIdeaPayload {
   status: IdeaStatus;
   language: string;
   category: IdeaCategory;
+  strategicAlignment: string[];
 }
 
 @injectable()
@@ -48,7 +49,8 @@ export class IdeaService {
       feasibility_study_url: null,
       pricing_offer_url: null,
       prototype_images_urls: [],
-      current_stage: null
+      current_stage: null,
+      strategic_alignment: payload.strategicAlignment,
     });
   }
 }

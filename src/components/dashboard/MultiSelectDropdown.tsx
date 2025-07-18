@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, X } from "lucide-react";
-import { useLanguage } from "@/hooks/useLanguage";
 
 interface MultiSelectDropdownProps {
   // Use a more generic type that matches the hook's output
@@ -23,7 +22,6 @@ export const MultiSelectDropdown = ({
   className = "",
 }: MultiSelectDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { language } = useLanguage();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -113,7 +111,7 @@ export const MultiSelectDropdown = ({
               <div className="flex items-center space-x-2">
                 <div className={`
                   w-4 h-4 border rounded flex items-center justify-center
-                  ${value.includes(option.value) ? 'bg-primary border-primary' : 'border-border'}'border-border'}
+                  ${value.includes(option.value) ? 'bg-primary border-primary' : 'border-border'}
                 `}>
                   {value.includes(option.value) && (
                     <div className="w-2 h-2 bg-primary-foreground rounded-sm" />
