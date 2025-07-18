@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
-import type { Profile, ListOfValue } from "@prisma/client";
+import { useState, useTransition, useRef, useEffect } from "react";
+import type { Profile } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,11 +11,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Lightbulb } from "lucide-react";
-import { createIdea } from "@/app/dashboard/actions";
+import { createIdea, type CreateIdeaPayload } from "@/app/dashboard/actions";
 import { IdeaCategory } from "@prisma/client";
 import { FileUploadField } from "./FileUploadField";
 import { MultiSelectDropdown } from "./MultiSelectDropdown";
 import { useListOfValues } from "@/hooks/useListOfValues";
+import { logger } from "@/lib/logger";
+import { Decimal } from "@prisma/client/runtime/library";
 
 interface IdeaSubmissionFormProps {
   profile: Profile;
@@ -29,23 +31,11 @@ interface FormState {
   implementation_cost: string;
   expected_roi: string;
   strategic_alignment_score: string;
-  status: string;
-  language: string;
-}
-
-interface SubmissionData {
-  title: string;
-  description: string;
-  category: IdeaCategory;
-  implementation_cost: string;
-  expected_roi: string;
-  strategic_alignment_score: string;
-  status: string;
-  language: string;
 }
 
 // Custom hook for form state management
 const useFormState = () => {
+  const [formErrors, setFormErrors] = useState<Record<string, string[] | undefined>>({});
   const [formData, setFormData] = useState<FormState>({
     title: "",
     description: "",
@@ -53,8 +43,6 @@ const useFormState = () => {
     implementation_cost: "",
     expected_roi: "",
     strategic_alignment_score: "",
-    status: "",
-    language: "",
   });
 
   const [feasibilityFiles, setFeasibilityFiles] = useState<File[]>([]);
@@ -70,13 +58,12 @@ const useFormState = () => {
       implementation_cost: "",
       expected_roi: "",
       strategic_alignment_score: "",
-      status: "",
-      language: "",
     });
     setFeasibilityFiles([]);
     setPricingFiles([]);
     setPrototypeFiles([]);
     setStrategicAlignment([]);
+    setFormErrors({});
   };
 
   const handleChange = (field: string, value: string) => {
@@ -85,6 +72,7 @@ const useFormState = () => {
 
   return {
     formData,
+    formErrors,
     feasibilityFiles,
     pricingFiles,
     prototypeFiles,
@@ -95,29 +83,20 @@ const useFormState = () => {
     setStrategicAlignment,
     resetForm,
     handleChange,
+    setFormErrors,
   };
 };
 
-// Form validation utilities
-const validateFormData = (data: SubmissionData) => {
-  return !!(data.title && data.description && data.category);
+const FieldError = ({ error }: { error?: string[] }) => {
+  if (!error || error.length === 0) return null;
+  return <p className="text-sm text-destructive mt-1">{error[0]}</p>;
 };
 
-const extractFormData = (formData: FormData): SubmissionData => ({
-  title: formData.get("title") as string,
-  description: formData.get("description") as string,
-  category: formData.get("category") as IdeaCategory,
-  implementation_cost: formData.get("implementation_cost") as string,
-  expected_roi: formData.get("expected_roi") as string,
-  strategic_alignment_score: formData.get("strategic_alignment_score") as string,
-  status: formData.get("status") as string,
-  language: formData.get("language") as string
-});
-
 // Basic form fields component
-const BasicFormFields = ({ formData, handleChange, isRTL, t }: {
+const BasicFormFields = ({ formData, handleChange, formErrors, isRTL, t }: {
   formData: FormState;
   handleChange: (field: string, value: string) => void;
+  formErrors: Record<string, string[] | undefined>;
   isRTL: boolean;
   t: (namespace: string, key: string) => string;
 }) => (
@@ -134,8 +113,8 @@ const BasicFormFields = ({ formData, handleChange, isRTL, t }: {
         onChange={(e) => handleChange("title", e.target.value)}
         className={isRTL ? 'text-right' : 'text-left'}
         dir={isRTL ? 'rtl' : 'ltr'}
-        required
       />
+      <FieldError error={formErrors.title} />
     </div>
 
     <div className="space-y-2">
@@ -151,19 +130,20 @@ const BasicFormFields = ({ formData, handleChange, isRTL, t }: {
         className={isRTL ? 'text-right' : 'text-left'}
         dir={isRTL ? 'rtl' : 'ltr'}
         rows={6}
-        required
       />
+      <FieldError error={formErrors.description} />
     </div>
   </>
 );
 
 // Category and strategic alignment fields
-const CategoryFields = ({ formData, handleChange, strategicAlignment, setStrategicAlignment, strategicAlignmentOptions, lovLoading, isRTL, t }: {
+const CategoryFields = ({ formData, handleChange, formErrors, strategicAlignment, setStrategicAlignment, strategicAlignmentOptions, lovLoading, isRTL, t }: {
   formData: FormState;
   handleChange: (field: string, value: string) => void;
+  formErrors: Record<string, string[] | undefined>;
   strategicAlignment: string[];
   setStrategicAlignment: (value: string[]) => void;
-  strategicAlignmentOptions: ListOfValue[];
+  strategicAlignmentOptions: { value: string; label: string }[];
   lovLoading: boolean;
   isRTL: boolean;
   t: (namespace: string, key: string) => string;
@@ -186,6 +166,7 @@ const CategoryFields = ({ formData, handleChange, strategicAlignment, setStrateg
           <SelectItem value="sustainability">{t('categories', 'sustainability')}</SelectItem>
         </SelectContent>
       </Select>
+      <FieldError error={formErrors.category} />
     </div>
 
     <div className="space-y-2">
@@ -294,26 +275,24 @@ const FileUploadSection = ({ feasibilityFiles, pricingFiles, prototypeFiles, set
 );
 
 // Form actions component
-const FormActions = ({ loading, isPending, isRTL, t, toast }: {
+const FormActions = ({ loading, isPending, onSaveDraft, isRTL, t }: {
   loading: boolean;
   isPending: boolean;
+  onSaveDraft: () => void;
   isRTL: boolean;
   t: (namespace: string, key: string) => string;
-  toast: ReturnType<typeof useToast>['toast'];
 }) => (
   <div className={`flex space-x-4 ${isRTL ? 'space-x-reverse' : ''}`}>
-    <Button type="submit" disabled={loading} className="flex-1">
+    <Button type="submit" name="status" value="submitted" disabled={loading} className="flex-1">
       {(isPending || loading) ? t('idea_form', 'submitting') : t('idea_form', 'submit_idea')}
     </Button>
     <Button
       type="button"
       variant="outline"
-      onClick={() => {
-        toast({
-          title: "Draft Saved",
-          description: "Your idea has been saved as a draft",
-        });
-      }}
+      name="status"
+      value="draft"
+      disabled={loading}
+      onClick={onSaveDraft}
     >
       {t('idea_form', 'save_as_draft')}
     </Button>
@@ -326,10 +305,11 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
   const formRef = useRef<HTMLFormElement>(null);
   const { toast } = useToast();
   const { t, isRTL, language } = useLanguage();
-  const { values: strategicAlignmentOptions, loading: lovLoading } = useListOfValues('strategic_alignment');
+  const { values: strategicAlignmentOptions, loading: lovLoading, error: lovError } = useListOfValues('strategic_alignment');
 
   const {
     formData,
+    formErrors,
     feasibilityFiles,
     pricingFiles,
     prototypeFiles,
@@ -340,7 +320,14 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
     setStrategicAlignment,
     resetForm,
     handleChange,
+    setFormErrors,
   } = useFormState();
+
+  useEffect(() => {
+    if (lovError) {
+      toast({ title: "Error", description: "Could not load strategic alignment options.", variant: "destructive" });
+    }
+  }, [lovError, toast]);
 
   const uploadFile = async (file: File, ideaId: string, fileType: string) => {
     const fileExt = file.name.split('.').pop();
@@ -382,7 +369,7 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
 
       await Promise.all(attachmentPromises);
     } catch (uploadError) {
-      console.error("Error uploading files:", uploadError);
+      logger.error("Error uploading files:", (uploadError as Error).message);
       toast({
         title: "Warning",
         description: "Idea submitted but some files failed to upload",
@@ -391,67 +378,76 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
     }
   };
 
-  const handleSuccessfulSubmission = () => {
+  const handleSuccessfulSubmission = (status: 'draft' | 'submitted') => {
     toast({
       title: t('common', 'success'),
-      description: "Your idea has been submitted successfully!",
+      description: `Your idea has been ${status} successfully!`,
     });
     resetForm();
     formRef.current?.reset();
     onIdeaSubmitted();
   };
 
-  const handleSubmissionError = (error: unknown) => {
-    console.error("Error submitting idea:", error);
-    toast({
-      title: t('common', 'error'),
-      description: "Failed to submit idea",
-      variant: "destructive",
+  const handleSubmissionError = (error: { error: string, details: unknown }) => {
+    // logger.error("Error submitting idea:", (error as Error).message);
+    logger.error("Error submitting idea:", error.details as string);
+    if (error.details) {
+      // Zod validation errors
+      setFormErrors(error.details as unknown as Record<string, string[] | undefined>);
+      toast({
+        title: t('common', 'error'),
+        description: "Please check the form for errors.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: t('common', 'error'),
+        description: error.error || "Failed to submit idea",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const processIdeaSubmission = async (status: 'draft' | 'submitted') => {
+    setLoading(true);
+    setFormErrors({});
+
+    const payload: CreateIdeaPayload = {
+      title: formData.title,
+      description: formData.description,
+      category: formData.category as IdeaCategory,
+      submitterId: profile.id,
+      implementationCost: formData.implementation_cost ? parseFloat(formData.implementation_cost) as unknown as Decimal : null,
+      expectedRoi: formData.expected_roi ? parseFloat(formData.expected_roi) as unknown as Decimal : null,
+      strategicAlignmentScore: formData.strategic_alignment_score ? parseInt(formData.strategic_alignment_score) : null,
+      status,
+      language,
+    };
+    startTransition(async () => {
+      try {
+        const result = await createIdea(payload);
+
+        if (result?.error) {
+          handleSubmissionError(result);
+          return;
+        }
+
+        if (result?.ideaId) {
+          await handleFileUploads(result.ideaId);
+        }
+
+        handleSuccessfulSubmission(status);
+      } catch (error) {
+        handleSubmissionError(error as { error: string, details: unknown });
+      } finally {
+        setLoading(false);
+      }
     });
   };
 
-  const processIdeaSubmission = async (submissionData: SubmissionData) => {
-    try {
-      const result = await createIdea({
-        title: submissionData.title,
-        description: submissionData.description,
-        category: submissionData.category,
-        submitterId: profile.id,
-        implementationCost: submissionData.implementation_cost ? parseFloat(submissionData.implementation_cost) : null,
-        expectedRoi: submissionData.expected_roi ? parseFloat(submissionData.expected_roi) : null,
-        strategicAlignmentScore: submissionData.strategic_alignment_score ? parseInt(submissionData.strategic_alignment_score) : null,
-        status: "draft",
-        language: language,
-      });
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      if (result?.ideaId) {
-        await handleFileUploads(result.ideaId);
-      }
-
-      handleSuccessfulSubmission();
-    } catch (error) {
-      handleSubmissionError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (formData: FormData) => {
-    setLoading(true);
-
-    const submissionData = extractFormData(formData);
-
-    if (!validateFormData(submissionData)) {
-      toast({ title: "Missing required fields", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-
-    startTransition(() => processIdeaSubmission(submissionData));
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    processIdeaSubmission('submitted');
   };
 
   return (
@@ -469,15 +465,16 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form ref={formRef} action={handleSubmit} className="space-y-6">
-            <BasicFormFields formData={formData} handleChange={handleChange} isRTL={isRTL} t={t} />
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+            <BasicFormFields formData={formData} handleChange={handleChange} formErrors={formErrors} isRTL={isRTL} t={t} />
 
             <CategoryFields
               formData={formData}
               handleChange={handleChange}
+              formErrors={formErrors}
               strategicAlignment={strategicAlignment}
               setStrategicAlignment={setStrategicAlignment}
-              strategicAlignmentOptions={strategicAlignmentOptions.values as unknown as ListOfValue[]}
+              strategicAlignmentOptions={strategicAlignmentOptions}
               lovLoading={lovLoading}
               isRTL={isRTL}
               t={t}
@@ -496,7 +493,7 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
               t={t}
             />
 
-            <FormActions loading={loading} isPending={isPending} isRTL={isRTL} t={t} toast={toast} />
+            <FormActions loading={loading} isPending={isPending} onSaveDraft={() => processIdeaSubmission('draft')} isRTL={isRTL} t={t} />
           </form>
         </CardContent>
       </Card>

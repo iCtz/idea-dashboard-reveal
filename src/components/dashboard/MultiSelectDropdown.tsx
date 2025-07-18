@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, X } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import { ListOfValue } from "@prisma/client";
 
 interface MultiSelectDropdownProps {
-  options: ListOfValue[];
+  // Use a more generic type that matches the hook's output
+  options: { value: string; label: string }[];
   value: string[];
   onChange: (value: string[]) => void;
   placeholder?: string;
@@ -49,9 +49,9 @@ export const MultiSelectDropdown = ({
   };
 
   const getOptionLabel = (optionKey: string) => {
-    const option = options.find(opt => opt.value_key === optionKey);
+    const option = options.find(opt => opt.value === optionKey);
     if (!option) return optionKey;
-    return language === 'ar' ? option.value_ar : option.value_en;
+    return option.label;
   };
 
   return (
@@ -61,6 +61,8 @@ export const MultiSelectDropdown = ({
         variant="outline"
         className={`w-full justify-between ${disabled ? 'opacity-50' : ''}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         disabled={disabled}
       >
         <div className="flex flex-wrap gap-1">
@@ -68,16 +70,17 @@ export const MultiSelectDropdown = ({
             <span className="text-muted-foreground">{placeholder}</span>
           ) : (
             value.slice(0, 2).map((optionKey) => (
-              <Badge key={optionKey} variant="secondary" className="text-xs">
+              <Badge key={optionKey} variant="secondary" className="text-xs"
+                onClick={(e) => e.stopPropagation()} // Prevent dropdown from closing
+              >
                 {getOptionLabel(optionKey)}
                 <button
                   type="button"
                   onClick={(e) => {
-                    e.stopPropagation();
                     removeOption(optionKey);
                   }}
-                  className="ml-1 hover:bg-destructive/20 rounded-full"
-                  title="Remove option"
+                  className="ml-1 p-0.5 hover:bg-destructive/20 rounded-full"
+                  aria-label={`Remove ${getOptionLabel(optionKey)}`}
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -94,28 +97,30 @@ export const MultiSelectDropdown = ({
       </Button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+        <div role="listbox" className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto">
           {options.map((option) => (
             <button
-              key={option.value_key}
+            key={option.value}
               type="button"
+              role="option"
+              aria-selected={value.includes(option.value)}
               className={`
                 w-full px-3 py-2 text-left hover:bg-accent transition-colors
-                ${value.includes(option.value_key) ? 'bg-accent' : ''}
+                ${value.includes(option.value) ? 'bg-accent' : ''}
               `}
-              onClick={() => toggleOption(option.value_key)}
+              onClick={() => toggleOption(option.value)}
             >
               <div className="flex items-center space-x-2">
                 <div className={`
                   w-4 h-4 border rounded flex items-center justify-center
-                  ${value.includes(option.value_key) ? 'bg-primary border-primary' : 'border-border'}
+                  ${value.includes(option.value) ? 'bg-primary border-primary' : 'border-border'}'border-border'}
                 `}>
-                  {value.includes(option.value_key) && (
+                  {value.includes(option.value) && (
                     <div className="w-2 h-2 bg-primary-foreground rounded-sm" />
                   )}
                 </div>
                 <span className="text-sm">
-                  {language === 'ar' ? option.value_ar : option.value_en}
+                  {option.label}
                 </span>
               </div>
             </button>

@@ -1,10 +1,11 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, X, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface FileUploadFieldProps {
   label: string;
@@ -14,6 +15,7 @@ interface FileUploadFieldProps {
   value: File[];
   onChange: (files: File[]) => void;
   disabled?: boolean;
+  maxSizeMB?: number;
   className?: string;
   placeholder?: string;
 }
@@ -26,6 +28,7 @@ export const FileUploadField = ({
   value,
   onChange,
   disabled = false,
+  maxSizeMB = 10,
   className = "",
   placeholder
 }: FileUploadFieldProps) => {
@@ -34,45 +37,47 @@ export const FileUploadField = ({
   const [dragOver, setDragOver] = useState(false);
   const { t, isRTL } = useLanguage();
 
+  const validateFile = (file: File): { isValid: boolean; error?: string } => {
+    // Validate file size
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      return { isValid: false, error: `${file.name} exceeds ${maxSizeMB}MB limit` };
+    }
+
+    // Validate file type
+    const acceptedTypes = accept.split(',').map(t => t.trim().toLowerCase());
+    const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
+    const fileMimeType = file.type.toLowerCase();
+
+    const isTypeAccepted = acceptedTypes.some(type => {
+      if (type.startsWith('.')) { // It's a file extension
+        return fileExtension === type;
+      }
+      if (type.endsWith('/*')) { // It's a wildcard MIME type
+        return fileMimeType.startsWith(type.slice(0, -1));
+      }
+      return fileMimeType === type; // It's a specific MIME type
+    });
+
+    if (!isTypeAccepted) {
+      return { isValid: false, error: `${file.name}: Invalid file type. Accepted: ${accept}` };
+    }
+
+    return { isValid: true };
+  };
+
   const handleFileSelect = (files: FileList | null) => {
     if (!files) return;
 
     const fileArray = Array.from(files);
     const validFiles: File[] = [];
 
-    // Validate file types and sizes
     for (const file of fileArray) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        toast({
-          title: "File too large",
-          description: `${file.name} exceeds 10MB limit`,
-          variant: "destructive",
-        });
-        continue;
+      const { isValid, error } = validateFile(file);
+      if (isValid) {
+        validFiles.push(file);
+      } else {
+        toast({ title: "File Error", description: error, variant: "destructive" });
       }
-
-      // Basic file type validation based on fileType
-      if (fileType === 'feasibility' || fileType === 'pricing_offer') {
-        if (!file.type.includes('pdf') && !file.type.includes('word') && !file.type.includes('document')) {
-          toast({
-            title: "Invalid file type",
-            description: `${file.name} must be a PDF or Word document`,
-            variant: "destructive",
-          });
-          continue;
-        }
-      } else if (fileType === 'prototype') {
-        if (!file.type.startsWith('image/')) {
-          toast({
-            title: "Invalid file type",
-            description: `${file.name} must be an image`,
-            variant: "destructive",
-          });
-          continue;
-        }
-      }
-
-      validFiles.push(file);
     }
 
     if (multiple) {
@@ -109,7 +114,7 @@ export const FileUploadField = ({
   return (
     <div className={`space-y-2 ${className}`}>
       <Label className={`text-sm font-medium ${isRTL ? 'text-right block' : 'text-left'}`}>{label}</Label>
-      
+
       <div
         className={`
           border-2 border-dashed rounded-lg p-4 transition-colors
@@ -126,12 +131,12 @@ export const FileUploadField = ({
           <p className={`text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
             {placeholder || t('idea_form', 'upload_files')}
           </p>
-          <p className={`text-xs text-muted-foreground mt-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-            {multiple 
+          <Badge variant="secondary" className="mt-2 text-xs font-normal">
+            {multiple
               ? t('idea_form', 'multiple_files_allowed')
               : t('idea_form', 'single_file_only')
-            }
-          </p>
+            } • Max {maxSizeMB}MB
+          </Badge>
         </div>
       </div>
 
