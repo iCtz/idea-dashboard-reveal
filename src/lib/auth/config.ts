@@ -54,7 +54,7 @@ export const authConfig = {
           );
 
           if (!passwordsMatch) {
-            logger.warn("AUTHORIZE: Password mismatch for user:", user.email);
+            logger.warn("AUTHORIZE: Password mismatch for user:", user.email as string);
             return null;
           }
 
