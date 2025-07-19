@@ -1,9 +1,15 @@
+
 import { useMemo, useState, useEffect } from "react";
 import type { Idea, Profile, User } from "@prisma/client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Users, Lightbulb, CheckCircle, Clock, Target } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { db } from "@lib/db";
+
+
+
 
 interface ManagementDashboardProps {
   user: User;
@@ -25,45 +31,99 @@ type StatusChartData = {
 
 export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, profile, allIdeas = [], userCount = 0, activeView }) => {
   const [loading, setLoading] = useState(true);
+  const [categoryData, setCategoryData] = useState<CategoryChartData[]>([]);
+  const [statusData, setStatusData] = useState<StatusChartData[]>([]);
   const { t } = useLanguage();
   const data = useMemo(() => {
     const implementedIdeas = allIdeas.filter(idea => idea.status === "implemented").length;
     const activeIdeas = allIdeas.filter(idea => ["submitted", "under_review", "approved"].includes(idea.status)).length;
 
-    const stats =({
+    const stats = {
       totalIdeas: allIdeas.length,
       totalUsers: userCount,
       activeIdeas: activeIdeas,
       implementedIdeas: implementedIdeas,
       successRate: allIdeas.length > 0 ? Math.round((implementedIdeas / allIdeas.length) * 100) : 0,
-      avgTimeToImplement: 30, // Placeholder value
-    });
+      avgTimeToImplement: 30,
+    };
 
     const categoryCount = allIdeas.reduce((acc: Record<string, number>, idea) => {
-      if (idea.category) {
-        acc[idea.category] = (acc[idea.category] || 0) + 1;
-      }
+      if (idea.category) acc[idea.category] = (acc[idea.category] || 0) + 1;
       return acc;
     }, {});
-    const categoryData = Object.entries(categoryCount).map(([name, value]) => ({ name: name.replace(/_/g, " "), value }));
 
     const statusCount = allIdeas.reduce((acc: Record<string, number>, idea) => {
-      if (idea.status) {
-        acc[idea.status] = (acc[idea.status] || 0) + 1;
-      }
+      if (idea.status) acc[idea.status] = (acc[idea.status] || 0) + 1;
       return acc;
     }, {});
-    const statusData = Object.entries(statusCount).map(([name, count]) => ({ name: name.replace(/_/g, " "), count }));
 
-    return { stats, categoryData, statusData };
+    return {
+      stats,
+      categoryData: Object.entries(categoryCount).map(([name, value]) => ({ name: name.replace(/_/g, " "), value })),
+      statusData: Object.entries(statusCount).map(([name, count]) => ({ name: name.replace(/_/g, " "), count }))
+    };
   }, [allIdeas, userCount]);
 
-  const { stats, categoryData, statusData } = data;
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#FF6F61', '#6B5B95', '#88B04B', '#F7CAC9'];
+  const { stats } = data;
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   useEffect(() => {
+    setCategoryData(data.categoryData);
+    setStatusData(data.statusData);
     setLoading(false);
-  }, []);
+  }, [data]);
+
+  const fetchCategoryData = async () => {
+    try {
+      const ideaCategoryData = await db.idea.findMany({
+        select:{
+          category: true,
+        }
+      });
+
+      if (!ideaCategoryData) throw new Error("Unknown error while fetching ideas");
+
+      const categoryCount = ideaCategoryData?.reduce((acc: Record<string, number>, idea) => {
+        acc[idea.category] = (acc[idea.category] || 0) + 1;
+        return acc;
+      }, {});
+
+      const chartData = Object.entries(categoryCount || {}).map(([category, count]) => ({
+        name: category.replace("_", " "),
+        value: count,
+      }));
+
+      setCategoryData(chartData);
+    } catch (error) {
+      console.error("Error fetching category data:", error);
+    }
+  };
+
+  const fetchStatusData = async () => {
+    try {
+      const ideaStatusData = await db.idea.findMany({
+        select:{
+          status: true,
+        }
+      });
+
+      if (!ideaStatusData) throw new Error("Unknown error while fetching ideas");
+
+      const statusCount = ideaStatusData?.reduce((acc: Record<string, number>, idea) => {
+        acc[idea.status] = (acc[idea.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      const chartData = Object.entries(statusCount || {}).map(([status, count]) => ({
+        name: status.replace("_", " "),
+        count: count,
+      }));
+
+      setStatusData(chartData);
+    } catch (error) {
+      console.error("Error fetching status data:", error);
+    }
+  };
 
   const renderDashboardOverview = () => {
     if (loading) {
@@ -85,6 +145,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+
               <CardTitle className="text-sm font-medium">Active Ideas</CardTitle>
               <Clock className="h-4 w-4 text-yellow-600" />
             </CardHeader>
@@ -102,6 +163,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
               <div className="text-2xl font-bold text-green-600">{stats.implementedIdeas}</div>
             </CardContent>
           </Card>
+
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -172,7 +234,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
                     dataKey="value"
                   >
                     {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${entry.name}`} fill={COLORS[index % COLORS.length]} strokeOpacity={0.5}/>
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -212,7 +274,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
         </Card>
       </div>
     );
-  };
+  }
 
   return renderDashboardOverview();
 };
