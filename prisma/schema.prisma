@@ -111,9 +111,6 @@ model Idea {
   // New fields from SQL schema
   idea_reference_code       String?    @unique @db.VarChar
   average_evaluation_score  Decimal?   @db.Decimal
-  feasibility_study_url     String?
-  pricing_offer_url         String?
-  prototype_images_urls     String[]
   current_stage             String?    @default("draft")
   language                  String?    @default("ar") @db.VarChar
 

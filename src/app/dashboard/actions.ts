@@ -10,7 +10,7 @@ import { logger } from "@/lib/logger";
 import { AttachmentFileType, IdeaCategory, IdeaStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { Decimal } from "@prisma/client/runtime/library";
-import { uploadFile, uploadAllFiles } from "@/utils/upload";
+import { uploadFile } from "@/utils/upload";
 
 interface UpdateProfilePayload {
   id: string;
@@ -25,16 +25,12 @@ const CreateIdeaSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters long."),
   category: z.nativeEnum(IdeaCategory),
   submitterId: z.string().uuid(),
-  implementationCost: z.string().transform(val => val ? new Decimal(val) : null).nullable(),
-  expectedRoi: z.string().transform(val => val ? new Decimal(val) : null).nullable(),
-  strategicAlignmentScore: z.number().int().min(1).max(10),
-  // implementationCost: z.string().nullable(),
-  // expectedRoi: z.string().nullable(),
-  // strategicAlignmentScore: z.string().nullable(),
+  implementationCost: z.any().refine(val => val === null || Decimal.isDecimal(val), { message: "Invalid decimal value" }).nullable(),
+  expectedRoi: z.any().refine(val => val === null || Decimal.isDecimal(val), { message: "Invalid decimal value" }).nullable(),
+  strategicAlignmentScore: z.number().int().min(1).max(10).nullable(),
   status: z.nativeEnum(IdeaStatus),
   language: z.string().min(2),
   strategicAlignment: z.array(z.string()),
-  // strategicAlignment: z.number().int().min(1).max(10).nullable(),
 });
 
 export async function updateProfile(payload: UpdateProfilePayload) {
@@ -71,41 +67,11 @@ export async function updateProfile(payload: UpdateProfilePayload) {
     return { error: "Failed to update profile.", details: (error as Error).message || "Unknown error" };
   }
 }
-
-// export async function createIdea(payload: CreateIdeaPayload) {
-//   try {
-//     // Validate essential fields before passing to the service
-//     const validatedPayload = CreateIdeaSchema.parse(payload);
-
-//     // Resolve the IdeaService from the container
-//     const ideaService = container.get<IdeaService>(TYPES.IdeaService);
-//     // Delegate the creation logic to the service
-//     const createdIdea = await ideaService.createIdea(validatedPayload);
-
-
-//     revalidatePath("/dashboard");
-
-//     return { success: true, ideaId: createdIdea.id };
-//   } catch (error) {
-//     logger.error("Failed to create idea:", (error as Error).message);
-//     if (error instanceof z.ZodError) {
-//       return { error: "Invalid form data.", details: error.flatten().fieldErrors };
-//     }
-//     return { error: "Failed to submit idea.", details: (error as Error).message || "Unknown error" };
-//   }
-// }
-
-// export async function createIdeaWithFiles(
-//   ideaPayload: CreateIdeaPayload,
-//   files: { type: string; file: File }[]
-// ) {
 export async function createIdeaWithFiles(formData: FormData) {
   try {
     // const attachments = await uploadAllFiles(files); // Extract to a helper
     const rawData = Object.fromEntries(formData.entries());
 
-    // const validatedPayload = CreateIdeaSchema.parse(ideaPayload);
-    // const ideaService = container.get<IdeaService>(TYPES.IdeaService);
     // Extract and parse the idea payload
     // 1. Extract and validate idea payload from FormData
     const rawPayload = formData.get("payload");
@@ -115,9 +81,7 @@ export async function createIdeaWithFiles(formData: FormData) {
     const ideaPayload = JSON.parse(rawPayload);
     const validatedPayload = CreateIdeaSchema.parse(ideaPayload);
 
-    // Delegate the creation logic to the service
-    // const createdIdea = await ideaService.createIdeaWithFiles(ideaPayload, attachments);
-    // Handle file uploads
+    // 2.
     const fileEntries = Array.from(formData.entries()).filter(
       ([key]) => key !== "payload"
     ) as [string, File][];

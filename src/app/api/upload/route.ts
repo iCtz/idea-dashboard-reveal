@@ -32,12 +32,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Error saving file.' }, { status: 500 });
   }
 }
-
-// export async function POST(request: NextRequest) {
-// 	const formData = await request.formData();
-// 	const file = formData.get('file') as File;
-// 	if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 });
-
-// 	const blob = await put(file.name, file, { access: 'public' });
-// 	return NextResponse.json({ url: blob.url });
-// }

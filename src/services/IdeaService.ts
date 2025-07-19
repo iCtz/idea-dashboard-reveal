@@ -24,38 +24,6 @@ export interface CreateIdeaPayload {
 export class IdeaService {
   constructor(@inject(TYPES.IDatabase) private readonly db: IDatabase) {}
 
-  public async createIdea(payload: CreateIdeaPayload): Promise<Idea> {
-    // Basic validation and sanitization
-    const title = payload.title.trim();
-    const description = payload.description.trim();
-    if (!title || !description) {
-      throw new Error("Title and description cannot be empty.");
-    }
-    return this.db.create("Idea", {
-      title: title,
-      description: description,
-      category: payload.category,
-      submitter_id: payload.submitterId,
-      status: payload.status,
-      language: payload.language,
-      implementation_cost: payload.implementationCost ? new Decimal(payload.implementationCost) : null,
-      expected_roi: payload.expectedRoi ? new Decimal(payload.expectedRoi) : null,
-      strategic_alignment_score: payload.strategicAlignmentScore,
-      priority_score: 0,
-      submitted_at: null,
-      evaluated_at: null,
-      implemented_at: null,
-      assigned_evaluator_id: null,
-      idea_reference_code: null,
-      average_evaluation_score: null,
-      feasibility_study_url: null,
-      pricing_offer_url: null,
-      prototype_images_urls: [],
-      current_stage: null,
-      strategic_alignment: [payload.strategicAlignment!.toString()],
-    });
-  }
-
   public async createIdeaWithFiles(
     payload: CreateIdeaPayload,
     attachments: { url: string; type: AttachmentFileType; name: string }[]
@@ -106,30 +74,4 @@ export class IdeaService {
       return idea;
     });
   }
-
-  // public async createIdeaWithFiles(
-  //   payload: CreateIdeaPayload,
-  //   attachments: { url: string; type: AttachmentFileType }[],
-  //   tx?: IDatabase // Accept abstract transaction
-  // ) {
-
-  //   const idea = await this.createIdea(payload);
-
-  //   const start = Date.now();
-
-  //   this.db.transaction(async (tx) => {
-  //     await this.db.createMany("IdeaAttachment",
-  //       attachments.map(att => ({
-  //         idea_id: idea.id,
-  //         file_url: att.url,       // Required field
-  //         file_type: att.type,     // Required field
-  //         file_name: att.url.split('/').pop() || null, // Optional but recommended
-  //         uploaded_by: payload.submitterId,
-  //         created_at: new Date(),  // Required by Prisma
-  //       }))
-  //     );
-  //   });
-  //   logger.performance(`Transaction`, start);
-  //   return idea;
-  // }
 }

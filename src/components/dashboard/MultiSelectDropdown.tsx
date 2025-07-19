@@ -95,14 +95,15 @@ export const MultiSelectDropdown = ({
       </Button>
 
       {isOpen && (
-        <div role="listbox" className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+        <div role="listbox" className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto" title="Select options">
           {options.map((option) => (
             <button
               key={option.value}
               type="button"
               role="option"
-              aria-selected={value.includes(option.value)}
-              aria-label={`Toggle ${option.label}`}
+              aria-selected={value.includes(option.value) ? "true" : "false"}
+              aria-label={`${option.label} ${value.includes(option.value) ? 'selected' : 'not selected'}`}
+              title={`Toggle selection for ${option.label}`}
               onKeyDown={(e) => e.key === 'Enter' && toggleOption(option.value)}
               className={`
                 w-full px-3 py-2 text-left hover:bg-accent transition-colors

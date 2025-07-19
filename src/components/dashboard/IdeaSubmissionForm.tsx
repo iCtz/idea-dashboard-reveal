@@ -363,23 +363,21 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
     setLoading(true);
     setFormErrors({});
 
-    // const scoreStr = formData.strategic_alignment_score;
-    // const parsedScore = parseInt(scoreStr, 10);
+    const scoreStr = formData.strategic_alignment_score;
+    const costStr = formData.implementation_cost;
+    const roiStr = formData.expected_roi;
 
     const payload: CreateIdeaPayload = {
       title: formData.title,
       description: formData.description,
       category: formData.category as IdeaCategory,
       submitterId: profile.id,
-      // implementationCost: formData.implementation_cost ? new Decimal(formData.implementation_cost) : null,
-      // expectedRoi: formData.expected_roi ? new Decimal(formData.expected_roi) : null,
-      // strategicAlignmentScore: scoreStr && !isNaN(parsedScore) ? parsedScore : 1,
-      implementationCost: new Decimal(formData.implementation_cost),
-      expectedRoi: new Decimal(formData.expected_roi),
-      strategicAlignmentScore: parseInt(formData.strategic_alignment_score),
+      implementationCost: costStr ? new Decimal(costStr) : null,
+      expectedRoi: roiStr ? new Decimal(roiStr) : null,
+      strategicAlignmentScore: scoreStr ? parseInt(scoreStr, 10) : null,
       status,
       // strategicAlignment,
-      strategicAlignment: [JSON.stringify(strategicAlignment)],
+      strategicAlignment: strategicAlignment,
       language,
     };
 
@@ -388,11 +386,6 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
     feasibilityFiles.forEach(file => ideaFormData.append('feasibility', file));
     pricingFiles.forEach(file => ideaFormData.append('pricing_offer', file));
     prototypeFiles.forEach(file => ideaFormData.append('prototype', file));
-    // const files = [
-    //   ...feasibilityFiles.map(file => ({ type: 'feasibility', file })),
-    //   ...pricingFiles.map(file => ({ type: 'pricing', file })),
-    //   ...prototypeFiles.map(file => ({ type: 'prototype', file })),
-    // ];
 
 
     startTransition(async () => {
