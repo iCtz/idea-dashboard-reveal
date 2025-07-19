@@ -1,5 +1,6 @@
 
 import "reflect-metadata";
+import type { Idea } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import type { IDatabase } from "@/database/IDatabase";
 import { TYPES } from "@/types/dbtypes";
@@ -14,6 +15,14 @@ export interface DashboardStats {
   avgTimeToImplement: number;
 };
 
+export interface SubmitterStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
+
 export interface ChartData {
   name: string;
   value: number;
@@ -25,6 +34,10 @@ export interface ManagementDashboardData {
   statusData: ChartData[];
 }
 
+export interface SubmitterDashboardData {
+  stats: SubmitterStats;
+  ideas: Idea[];
+  }
 
 @injectable()
 export class DashboardService {
@@ -67,5 +80,21 @@ export class DashboardService {
 
     logger.performance("Dashboard data retrieval", start);
     return data;
+  }
+
+  public async getSubmitterDashboardData(submitterId: string): Promise<SubmitterDashboardData> {
+    const start = Date.now();
+
+    const ideas = await this.db.find("Idea", { submitter_id: submitterId }, { created_at: "desc" });
+
+    const stats: SubmitterStats = {
+      total: ideas.length,
+      pending: ideas.filter(idea => ["submitted", "under_review"].includes(idea.status)).length,
+      approved: ideas.filter(idea => idea.status === "approved").length,
+      rejected: ideas.filter(idea => idea.status === "rejected").length,
+    };
+
+    logger.performance(`Submitter dashboard data retrieval for ${submitterId}`, start);
+    return { stats, ideas };
   }
 }

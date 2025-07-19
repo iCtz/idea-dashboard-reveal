@@ -110,7 +110,6 @@ export function DashboardClient({
           <SubmitterDashboard
             user={user}
             profile={profile}
-            initialIdeas={ideas}
             activeView={activeView}
           />
         );

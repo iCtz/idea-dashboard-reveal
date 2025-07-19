@@ -1,39 +1,49 @@
+"use client";
 
-import { useState, useMemo } from "react";
-import type { Idea, Profile, User } from "@prisma/client";
+import { useState, useEffect, useCallback } from "react";
+import type { Profile, User } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb, Clock, CheckCircle, TrendingUp } from "lucide-react";
 import { IdeaSubmissionForm } from "./IdeaSubmissionForm";
 import { IdeaCard } from "./IdeaCard";
 import { useLanguage } from "@/hooks/useLanguage";
+import { getSubmitterDashboardData, type SubmitterDashboardData } from "@/app/dashboard/actions";
 
 interface SubmitterDashboardProps {
   user: User;
   profile: Profile;
-  initialIdeas: Idea[];
   activeView: string;
 }
 
-export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, profile, initialIdeas, activeView }) => {
+const initialData: SubmitterDashboardData = {
+  stats: {
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  },
+  ideas: [],
+};
+
+export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, profile, activeView }) => {
   // The ideas are now passed as props, no need for local state to hold them.
-  const ideas = initialIdeas;
   const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<SubmitterDashboardData>(initialData);
   const { t } = useLanguage();
 
-  // Calculate stats based on the initialIdeas prop.
-  // useMemo ensures this expensive calculation only runs when ideas change.
-  // After submitting an idea, we no longer need to fetch.
-  // The server action will revalidate the path, and Next.js will re-render with fresh data.
-  const stats = useMemo(() => {
-    setLoading(false);
-    return {
-      total: ideas.length,
-      pending: ideas.filter(idea => ["submitted", "under_review"].includes(idea.status)).length,
-      approved: ideas.filter(idea => idea.status === "approved").length,
-      rejected: ideas.filter(idea => idea.status === "rejected").length,
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    const data = await getSubmitterDashboardData();
+    if (data) {
+      setDashboardData(data);
     };
-  }, [ideas]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">
@@ -44,7 +54,7 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
             <Lightbulb className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold">{dashboardData.stats.total}</div>
           </CardContent>
         </Card>
 
@@ -54,7 +64,7 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+            <div className="text-2xl font-bold text-yellow-600">{dashboardData.stats.pending}</div>
           </CardContent>
         </Card>
 
@@ -64,7 +74,7 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+            <div className="text-2xl font-bold text-green-600">{dashboardData.stats.approved}</div>
           </CardContent>
         </Card>
 
@@ -75,7 +85,7 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0}%
+              {dashboardData.stats.total > 0 ? Math.round((dashboardData.stats.approved / dashboardData.stats.total) * 100) : 0}%
             </div>
           </CardContent>
         </Card>
@@ -98,10 +108,10 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
               );
             }
 
-            if (ideas.length > 0) {
+            if (dashboardData.ideas.length > 0) {
               return (
                 <div className="space-y-4">
-                  {ideas.slice(0, 5).map((idea) => (
+                  {dashboardData.ideas.slice(0, 5).map((idea) => (
                     <IdeaCard key={idea.id} idea={idea} />
                   ))}
                 </div>
@@ -125,7 +135,7 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{t('dashboard', 'my_ideas_title')}</h2>
-        <Badge variant="secondary">{ideas.length} {t('dashboard', 'total_count')}</Badge>
+        <Badge variant="secondary">{dashboardData.ideas.length} {t('dashboard', 'total_count')}</Badge>
       </div>
 
       {(() => {
@@ -139,10 +149,10 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
           );
         }
 
-        if (ideas.length > 0) {
+        if (dashboardData.ideas.length > 0) {
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ideas.map((idea) => (
+              {dashboardData.ideas.map((idea) => (
                 <IdeaCard key={idea.id} idea={idea} detailed />
               ))}
             </div>
@@ -166,7 +176,7 @@ export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, pr
 
   switch (activeView) {
     case "submit":
-      return <IdeaSubmissionForm profile={profile} onIdeaSubmitted={() => stats} />;
+      return <IdeaSubmissionForm profile={profile} onIdeaSubmitted={() => dashboardData.stats} />;
     case "my-ideas":
       return renderMyIdeas();
     case "ideas":
