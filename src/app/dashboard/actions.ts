@@ -10,7 +10,7 @@ import { logger } from "@/lib/logger";
 import { AttachmentFileType, IdeaCategory, IdeaStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { Decimal } from "@prisma/client/runtime/library";
-import { uploadAllFiles } from "@/utils/upload";
+import { uploadFile, uploadAllFiles } from "@/utils/upload";
 
 interface UpdateProfilePayload {
   id: string;
@@ -28,9 +28,13 @@ const CreateIdeaSchema = z.object({
   implementationCost: z.string().transform(val => val ? new Decimal(val) : null).nullable(),
   expectedRoi: z.string().transform(val => val ? new Decimal(val) : null).nullable(),
   strategicAlignmentScore: z.number().int().min(1).max(10),
+  // implementationCost: z.string().nullable(),
+  // expectedRoi: z.string().nullable(),
+  // strategicAlignmentScore: z.string().nullable(),
   status: z.nativeEnum(IdeaStatus),
   language: z.string().min(2),
   strategicAlignment: z.array(z.string()),
+  // strategicAlignment: z.number().int().min(1).max(10).nullable(),
 });
 
 export async function updateProfile(payload: UpdateProfilePayload) {
@@ -68,48 +72,80 @@ export async function updateProfile(payload: UpdateProfilePayload) {
   }
 }
 
-export async function createIdea(payload: CreateIdeaPayload) {
+// export async function createIdea(payload: CreateIdeaPayload) {
+//   try {
+//     // Validate essential fields before passing to the service
+//     const validatedPayload = CreateIdeaSchema.parse(payload);
+
+//     // Resolve the IdeaService from the container
+//     const ideaService = container.get<IdeaService>(TYPES.IdeaService);
+//     // Delegate the creation logic to the service
+//     const createdIdea = await ideaService.createIdea(validatedPayload);
+
+
+//     revalidatePath("/dashboard");
+
+//     return { success: true, ideaId: createdIdea.id };
+//   } catch (error) {
+//     logger.error("Failed to create idea:", (error as Error).message);
+//     if (error instanceof z.ZodError) {
+//       return { error: "Invalid form data.", details: error.flatten().fieldErrors };
+//     }
+//     return { error: "Failed to submit idea.", details: (error as Error).message || "Unknown error" };
+//   }
+// }
+
+// export async function createIdeaWithFiles(
+//   ideaPayload: CreateIdeaPayload,
+//   files: { type: string; file: File }[]
+// ) {
+export async function createIdeaWithFiles(formData: FormData) {
   try {
-    // Validate essential fields before passing to the service
-    const validatedPayload = CreateIdeaSchema.parse(payload);
+    // const attachments = await uploadAllFiles(files); // Extract to a helper
+    const rawData = Object.fromEntries(formData.entries());
 
-    // Resolve the IdeaService from the container
-    const ideaService = container.get<IdeaService>(TYPES.IdeaService);
-    // Delegate the creation logic to the service
-    const createdIdea = await ideaService.createIdea(validatedPayload);
-
-
-    revalidatePath("/dashboard");
-
-    return { success: true, ideaId: createdIdea.id };
-  } catch (error) {
-    logger.error("Failed to create idea:", (error as Error).message);
-    if (error instanceof z.ZodError) {
-      return { error: "Invalid form data.", details: error.flatten().fieldErrors };
+    // const validatedPayload = CreateIdeaSchema.parse(ideaPayload);
+    // const ideaService = container.get<IdeaService>(TYPES.IdeaService);
+    // Extract and parse the idea payload
+    // 1. Extract and validate idea payload from FormData
+    const rawPayload = formData.get("payload");
+    if (typeof rawPayload !== "string") {
+      throw new Error("Invalid payload type");
     }
-    return { error: "Failed to submit idea.", details: (error as Error).message || "Unknown error" };
-  }
-}
-
-export async function createIdeaWithFiles(
-  ideaPayload: CreateIdeaPayload,
-  files: { type: string; file: File }[]
-) {
-  try {
-    const attachments = await uploadAllFiles(files); // Extract to a helper
+    const ideaPayload = JSON.parse(rawPayload);
     const validatedPayload = CreateIdeaSchema.parse(ideaPayload);
-    const ideaService = container.get<IdeaService>(TYPES.IdeaService);
-    // Delegate the creation logic to the service
-    const createdIdea = await ideaService.createIdeaWithFiles(ideaPayload, attachments);
 
+    // Delegate the creation logic to the service
+    // const createdIdea = await ideaService.createIdeaWithFiles(ideaPayload, attachments);
+    // Handle file uploads
+    const fileEntries = Array.from(formData.entries()).filter(
+      ([key]) => key !== "payload"
+    ) as [string, File][];
+
+    const uploadPromises = fileEntries.map(async ([type, file]) => {
+      const { url } = await uploadFile(file);
+      return { url, type: type as AttachmentFileType, name: file.name };
+    });
+
+    const attachments = await Promise.all(uploadPromises);
+
+    // 3. Resolve the IdeaService and create the idea and attachments in a transaction
+    const ideaService = container.get<IdeaService>(TYPES.IdeaService);
+    const createdIdea = await ideaService.createIdeaWithFiles(
+      validatedPayload,
+      attachments
+    );
 
     revalidatePath("/dashboard");
 
     return { success: true, ideaId: createdIdea.id };
   } catch (error) {
-    logger.error("Failed to create idea:", (error as Error).message);
+    logger.error("Failed to create idea with files:", (error as Error).message);
     if (error instanceof z.ZodError) {
-      return { error: "Invalid form data.", details: error.flatten().fieldErrors };
+      return {
+        error: "Validation failed",
+        details: error.flatten().fieldErrors
+      };
     }
     return { error: "Failed to submit idea.", details: (error as Error).message || "Unknown error" };
   }

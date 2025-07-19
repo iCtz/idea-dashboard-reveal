@@ -102,6 +102,8 @@ export const MultiSelectDropdown = ({
               type="button"
               role="option"
               aria-selected={value.includes(option.value)}
+              aria-label={`Toggle ${option.label}`}
+              onKeyDown={(e) => e.key === 'Enter' && toggleOption(option.value)}
               className={`
                 w-full px-3 py-2 text-left hover:bg-accent transition-colors
                 ${value.includes(option.value) ? 'bg-accent' : ''}

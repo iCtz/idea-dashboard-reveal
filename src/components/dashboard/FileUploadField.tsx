@@ -47,6 +47,10 @@ export const FileUploadField = ({
     const acceptedTypes = accept.split(',').map(t => t.trim().toLowerCase());
     const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
     const fileMimeType = file.type.toLowerCase();
+    // const validTypes = ['image/jpeg', 'application/pdf'];
+    // if (!validTypes.includes(file.type)) {
+    //   throw new Error('Invalid file type');
+    // }
 
     const isTypeAccepted = acceptedTypes.some(type => {
       if (type.startsWith('.')) { // It's a file extension
@@ -168,6 +172,9 @@ export const FileUploadField = ({
                 type="button"
                 variant="ghost"
                 size="sm"
+                role="button"
+                // aria-label="Upload file"
+                // tabIndex={0}
                 onClick={() => removeFile(index)}
                 disabled={disabled}
               >

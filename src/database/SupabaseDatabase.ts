@@ -124,4 +124,18 @@ export class SupabaseDatabase implements IDatabase {
     if (error) throw error;
     return result as ModelType<T>;
   }
+
+  async transaction<T>(fn: (tx: IDatabase) => Promise<T>): Promise<T> {
+    throw new Error("Transactions not supported in SupabaseDatabase");
+  }
+  async createMany<T extends ModelName>(model: T, data: CreateData<ModelType<T>>[]): Promise<ModelType<T>[]> {
+    const { data: result, error } = await this.supabase
+      .from(model.toLowerCase())
+      .insert([data as any])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result as ModelType<T>[];
+  }
 }
