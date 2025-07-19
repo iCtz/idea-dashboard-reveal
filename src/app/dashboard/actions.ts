@@ -6,6 +6,7 @@ import { getDatabase } from "@/database";
 import { container } from "@/lib/inversify.config";
 import { IdeaService, type CreateIdeaPayload } from "@/services/IdeaService";
 import { TYPES } from "@/types/dbtypes";
+import { DashboardService, type ManagementDashboardData } from "@/services/DashboardService";
 import { logger } from "@/lib/logger";
 import { AttachmentFileType, IdeaCategory, IdeaStatus } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -115,6 +116,17 @@ export async function createIdeaWithFiles(formData: FormData) {
   }
 }
 
+export async function getManagementDashboardData(): Promise<ManagementDashboardData | null> {
+  try {
+    const dashboardService = container.get<DashboardService>(TYPES.DashboardService);
+    const data = await dashboardService.getManagementDashboardData();
+    return data;
+  } catch (error) {
+    logger.error("Failed to fetch management dashboard data:", (error as Error).message);
+    return null;
+  }
+}
+
 export async function getListOfValues(listKey: string) {
   try {
     const values = await db.listOfValue.findMany({
@@ -133,5 +145,5 @@ export async function getListOfValues(listKey: string) {
   }
 }
 
-export { CreateIdeaPayload };
+export type { CreateIdeaPayload, ManagementDashboardData };
 

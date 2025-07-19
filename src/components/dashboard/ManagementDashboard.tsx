@@ -1,21 +1,16 @@
+"use client";
 
-import { useMemo, useState, useEffect } from "react";
-import type { Idea, Profile, User } from "@prisma/client";
-
+import { useState, useEffect } from "react";
+import type { Profile, User } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Users, Lightbulb, CheckCircle, Clock, Target } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import { db } from "@lib/db";
-
-
-
+import { getManagementDashboardData, type ManagementDashboardData } from "@/app/dashboard/actions";
 
 interface ManagementDashboardProps {
   user: User;
   profile: Profile;
-  allIdeas: Idea[];
-  userCount: number;
   activeView: string;
 }
 
@@ -29,101 +24,39 @@ type StatusChartData = {
   count: number;
 };
 
-export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, profile, allIdeas = [], userCount = 0, activeView }) => {
+const initialStats = {
+  totalIdeas: 0,
+  totalUsers: 0,
+  activeIdeas: 0,
+  implementedIdeas: 0,
+  successRate: 0,
+  avgTimeToImplement: 0,
+};
+
+export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, profile, activeView }) => {
   const [loading, setLoading] = useState(true);
-  const [categoryData, setCategoryData] = useState<CategoryChartData[]>([]);
-  const [statusData, setStatusData] = useState<StatusChartData[]>([]);
+  const [dashboardData, setDashboardData] = useState<ManagementDashboardData>({
+    stats: initialStats,
+    categoryData: [],
+    statusData: [],
+  });
+
   const { t } = useLanguage();
-  const data = useMemo(() => {
-    const implementedIdeas = allIdeas.filter(idea => idea.status === "implemented").length;
-    const activeIdeas = allIdeas.filter(idea => ["submitted", "under_review", "approved"].includes(idea.status)).length;
-
-    const stats = {
-      totalIdeas: allIdeas.length,
-      totalUsers: userCount,
-      activeIdeas: activeIdeas,
-      implementedIdeas: implementedIdeas,
-      successRate: allIdeas.length > 0 ? Math.round((implementedIdeas / allIdeas.length) * 100) : 0,
-      avgTimeToImplement: 30,
-    };
-
-    const categoryCount = allIdeas.reduce((acc: Record<string, number>, idea) => {
-      if (idea.category) acc[idea.category] = (acc[idea.category] || 0) + 1;
-      return acc;
-    }, {});
-
-    const statusCount = allIdeas.reduce((acc: Record<string, number>, idea) => {
-      if (idea.status) acc[idea.status] = (acc[idea.status] || 0) + 1;
-      return acc;
-    }, {});
-
-    return {
-      stats,
-      categoryData: Object.entries(categoryCount).map(([name, value]) => ({ name: name.replace(/_/g, " "), value })),
-      statusData: Object.entries(statusCount).map(([name, count]) => ({ name: name.replace(/_/g, " "), count }))
-    };
-  }, [allIdeas, userCount]);
-
-  const { stats } = data;
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   useEffect(() => {
-    setCategoryData(data.categoryData);
-    setStatusData(data.statusData);
-    setLoading(false);
-  }, [data]);
+    const fetchData = async () => {
+      setLoading(true);
+      const data = await getManagementDashboardData();
+      if (data) {
+        setDashboardData(data);
+      }
+      setLoading(false);
+    };
 
-  const fetchCategoryData = async () => {
-    try {
-      const ideaCategoryData = await db.idea.findMany({
-        select:{
-          category: true,
-        }
-      });
+    fetchData();
+  }, []);
 
-      if (!ideaCategoryData) throw new Error("Unknown error while fetching ideas");
-
-      const categoryCount = ideaCategoryData?.reduce((acc: Record<string, number>, idea) => {
-        acc[idea.category] = (acc[idea.category] || 0) + 1;
-        return acc;
-      }, {});
-
-      const chartData = Object.entries(categoryCount || {}).map(([category, count]) => ({
-        name: category.replace("_", " "),
-        value: count,
-      }));
-
-      setCategoryData(chartData);
-    } catch (error) {
-      console.error("Error fetching category data:", error);
-    }
-  };
-
-  const fetchStatusData = async () => {
-    try {
-      const ideaStatusData = await db.idea.findMany({
-        select:{
-          status: true,
-        }
-      });
-
-      if (!ideaStatusData) throw new Error("Unknown error while fetching ideas");
-
-      const statusCount = ideaStatusData?.reduce((acc: Record<string, number>, idea) => {
-        acc[idea.status] = (acc[idea.status] || 0) + 1;
-        return acc;
-      }, {});
-
-      const chartData = Object.entries(statusCount || {}).map(([status, count]) => ({
-        name: status.replace("_", " "),
-        count: count,
-      }));
-
-      setStatusData(chartData);
-    } catch (error) {
-      console.error("Error fetching status data:", error);
-    }
-  };
 
   const renderDashboardOverview = () => {
     if (loading) {
@@ -139,7 +72,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
               <Lightbulb className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalIdeas}</div>
+              <div className="text-2xl font-bold">{dashboardData.stats.totalIdeas}</div>
             </CardContent>
           </Card>
 
@@ -150,7 +83,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
               <Clock className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{stats.activeIdeas}</div>
+            <div className="text-2xl font-bold text-yellow-600">{dashboardData.stats.activeIdeas}</div>
             </CardContent>
           </Card>
 
@@ -160,7 +93,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
               <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.implementedIdeas}</div>
+              <div className="text-2xl font-bold text-green-600">{dashboardData.stats.implementedIdeas}</div>
             </CardContent>
           </Card>
 
@@ -171,7 +104,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
               <Target className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.successRate}%</div>
+              <div className="text-2xl font-bold text-blue-600">{dashboardData.stats.successRate}%</div>
             </CardContent>
           </Card>
 
@@ -181,7 +114,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
               <Users className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{stats.totalUsers}</div>
+              <div className="text-2xl font-bold text-purple-600">{dashboardData.stats.totalUsers}</div>
             </CardContent>
           </Card>
 
@@ -191,7 +124,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
               <TrendingUp className="h-4 w-4 text-indigo-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-indigo-600">{stats.avgTimeToImplement}d</div>
+              <div className="text-2xl font-bold text-indigo-600">{dashboardData.stats.avgTimeToImplement}d</div>
             </CardContent>
           </Card>
         </div>
@@ -204,7 +137,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={statusData}>
+              <BarChart data={dashboardData.statusData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -223,8 +156,8 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
-                  <Pie
-                    data={categoryData}
+                <Pie
+                    data={dashboardData.categoryData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -233,7 +166,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {categoryData.map((entry, index) => (
+                    {dashboardData.categoryData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -252,20 +185,20 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, 
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
-                  {Math.round((stats.implementedIdeas / Math.max(stats.totalIdeas, 1)) * 100)}%
+                <div className="text-2xl font-bold text-blue-600">{
+                  Math.round((dashboardData.stats.implementedIdeas / Math.max(dashboardData.stats.totalIdeas, 1)) * 100)}%
                 </div>
                 <div className="text-sm text-gray-600">Implementation Rate</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">
-                  {Math.round(stats.totalIdeas / Math.max(stats.totalUsers, 1) * 10) / 10}
+                  {Math.round(dashboardData.stats.totalIdeas / Math.max(dashboardData.stats.totalUsers, 1) * 10) / 10}
                 </div>
                 <div className="text-sm text-gray-600">Ideas per User</div>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-lg">
                 <div className="text-2xl font-bold text-purple-600">
-                  {Math.round((stats.activeIdeas / Math.max(stats.totalIdeas, 1)) * 100)}%
+                  {Math.round((dashboardData.stats.activeIdeas / Math.max(dashboardData.stats.totalIdeas, 1)) * 100)}%
                 </div>
                 <div className="text-sm text-gray-600">Active Idea Rate</div>
               </div>

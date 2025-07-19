@@ -102,8 +102,6 @@ export function DashboardClient({
           <ManagementDashboard
             user={user}
             profile={profile}
-            allIdeas={allIdeas}
-            userCount={userCount}
             activeView={activeView}
           />
         );

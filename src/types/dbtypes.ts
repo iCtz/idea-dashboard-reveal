@@ -4,6 +4,7 @@ const TYPES = {
   UserService: Symbol.for("UserService"),
   PrismaClient: Symbol.for("PrismaClient"),
   IdeaService: Symbol.for("IdeaService"),
+  DashboardService: Symbol.for("DashboardService"),
 };
 
 export interface DatabaseConfig {
