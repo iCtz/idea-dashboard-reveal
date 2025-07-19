@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SubmitterDashboard } from "./SubmitterDashboard";
@@ -21,7 +21,6 @@ interface DashboardProps {
 interface DashboardClientProps {
   user: User;
   profile: Profile | null;
-  ideas: Idea[];
   evaluations: Evaluation[];
   allIdeas: Idea[];
   userCount: number;
@@ -30,7 +29,6 @@ interface DashboardClientProps {
 export function DashboardClient({
   user,
   profile: initialProfile,
-  ideas,
   evaluations,
   allIdeas,
   userCount,
@@ -42,6 +40,9 @@ export function DashboardClient({
   const { toast } = useToast();
   const { t } = useLanguage();
 
+  useEffect(() => {
+    setLoading(false);
+  }, []);
 
   const handleProfileUpdate = (updatedProfile: Profile) => {
     setProfile(updatedProfile);
@@ -92,23 +93,17 @@ export function DashboardClient({
           <EvaluatorDashboard
             user={user}
             profile={profile}
-            pendingIdeas={ideas}
             pendingEvaluations={evaluations}
             activeView={activeView}
           />
         );
       case "management":
         return (
-          <ManagementDashboard
-            user={user}
-            profile={profile}
-            activeView={activeView}
-          />
+          <ManagementDashboard/>
         );
       default:
         return (
           <SubmitterDashboard
-            user={user}
             profile={profile}
             activeView={activeView}
           />

@@ -8,12 +8,6 @@ import { TrendingUp, Users, Lightbulb, CheckCircle, Clock, Target } from "lucide
 import { useLanguage } from "@/hooks/useLanguage";
 import { getManagementDashboardData, type ManagementDashboardData } from "@/app/dashboard/actions";
 
-interface ManagementDashboardProps {
-  user: User;
-  profile: Profile;
-  activeView: string;
-}
-
 type CategoryChartData = {
   name: string;
   value: number;
@@ -33,7 +27,7 @@ const initialStats = {
   avgTimeToImplement: 0,
 };
 
-export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ user, profile, activeView }) => {
+export const ManagementDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<ManagementDashboardData>({
     stats: initialStats,

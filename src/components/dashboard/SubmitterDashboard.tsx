@@ -10,12 +10,6 @@ import { IdeaCard } from "./IdeaCard";
 import { useLanguage } from "@/hooks/useLanguage";
 import { getSubmitterDashboardData, type SubmitterDashboardData } from "@/app/dashboard/actions";
 
-interface SubmitterDashboardProps {
-  user: User;
-  profile: Profile;
-  activeView: string;
-}
-
 const initialData: SubmitterDashboardData = {
   stats: {
     total: 0,
@@ -26,7 +20,7 @@ const initialData: SubmitterDashboardData = {
   ideas: [],
 };
 
-export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ user, profile, activeView }) => {
+export const SubmitterDashboard: React.FC<{ profile: Profile, activeView: string }> = ({ profile, activeView }) => {
   // The ideas are now passed as props, no need for local state to hold them.
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<SubmitterDashboardData>(initialData);

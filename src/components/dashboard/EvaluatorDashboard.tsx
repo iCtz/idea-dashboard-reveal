@@ -11,12 +11,11 @@ import { db } from "@lib/db";
 interface EvaluatorDashboardProps {
   user: User;
   profile: Profile;
-  pendingIdeas: Idea[];
   pendingEvaluations: Evaluation[];
   activeView: string;
 }
 
-export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, profile, pendingIdeas, pendingEvaluations, activeView }) => {
+export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, profile, pendingEvaluations, activeView }) => {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
