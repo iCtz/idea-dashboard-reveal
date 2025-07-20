@@ -1,12 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import type { Idea, Profile, Evaluation, User } from "@prisma/client";
+
+"use client";
+
+import type { Profile, User } from "@prisma/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Eye, Star, Clock, CheckCircle } from "lucide-react";
-import { useLanguage } from "@/hooks/useLanguage";
 import { EvaluationForm } from "./EvaluationForm";
 import { type EvaluatorDashboardData } from "@/app/dashboard/actions";
+import { useEvaluatorDashboard } from "@/hooks/useEvaluatorDashboard";
 
 interface EvaluatorDashboardProps {
   user: User;
@@ -16,51 +18,18 @@ interface EvaluatorDashboardProps {
 }
 
 export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, profile, evaluatorData, activeView }) => {
-const [loading, setLoading] = useState(true);
-  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
-  const [showEvaluationForm, setShowEvaluationForm] = useState(false);
-  const { t, isRTL } = useLanguage();
-  const { ideasForEvaluation = [], myEvaluations: evaluations = [] } = evaluatorData || {};
-
-  // This is now just for simulating a loading state on initial render.
-  useEffect(() => {
-    setLoading(false);
-  }, []);
-
-  const handleEvaluationSubmitted = () => {
-    setShowEvaluationForm(false);
-    setSelectedIdea(null);
-    // Data will be re-fetched by the server component on the next page load
-    // due to revalidatePath in the server action.
-    // For an immediate UI update, you might consider a client-side state update here.
-  };
-
-  const handleEvaluateIdea = (idea: Idea) => {
-    setSelectedIdea(idea);
-    setShowEvaluationForm(true);
-  };
-
-  const evaluatedIdeaIds = useMemo(() => {
-    return new Set(evaluations.map(e => e.idea_id));
-  }, [evaluations]);
-
-  const isIdeaEvaluated = useCallback((ideaId: string) => {
-    return evaluatedIdeaIds.has(ideaId);
-  }, [evaluatedIdeaIds]);
-
-
-  const stats = useMemo(() => {
-    const pendingIdeas = ideasForEvaluation.filter(ideasForEvaluation => !isIdeaEvaluated(ideasForEvaluation.id));
-    const evaluatedIdeas = ideasForEvaluation.filter(ideasForEvaluation => isIdeaEvaluated(ideasForEvaluation.id));
-
-    return {
-      total: ideasForEvaluation.length,
-      pending: pendingIdeas.length,
-      evaluated: evaluatedIdeas.length,
-      totalEvaluations: evaluations.length,
-
-    };
-  }, [ideasForEvaluation, evaluations, isIdeaEvaluated]);
+  const {
+    loading,
+    selectedIdea,
+    showEvaluationForm,
+    t,
+    isRTL,
+    ideasForEvaluation,
+    handleEvaluationSubmitted,
+    handleEvaluateIdea,
+    isIdeaEvaluated,
+    stats,
+  } = useEvaluatorDashboard(evaluatorData);
 
   if (showEvaluationForm && selectedIdea) {
     return (
