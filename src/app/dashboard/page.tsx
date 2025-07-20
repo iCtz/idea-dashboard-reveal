@@ -1,6 +1,4 @@
 
-"use client"
-
 import { auth } from "@/../auth";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { db } from "@lib/db";
@@ -61,8 +59,6 @@ export default async function DashboardPage() {
       <DashboardClient
         user={session.user as User}
         profile={profile}
-        ideas={ideas}
-        evaluations={evaluations}
         allIdeas={allIdeas}
         userCount={userCount}
       />

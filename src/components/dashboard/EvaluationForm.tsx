@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,16 +8,22 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ClipboardCheck, Star } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import type { Idea, Profile, PrismaClient } from "@prisma/client";
+import type { Idea, Profile } from "@prisma/client";
+import { createEvaluation, type CreateEvaluationPayload } from "@/app/dashboard/actions";
 
 interface EvaluationFormProps {
   idea: Idea;
   profile: Profile;
   onEvaluationSubmitted: () => void;
-  database: PrismaClient;
 }
 
-export const EvaluationForm = ({ idea, profile, onEvaluationSubmitted, database }: EvaluationFormProps) => {
+const FieldError = ({ error }: { error?: string[] }) => {
+  if (!error || error.length === 0) return null;
+  return <p className="text-sm text-destructive mt-1">{error[0]}</p>;
+};
+
+export const EvaluationForm = ({ idea, profile, onEvaluationSubmitted }: EvaluationFormProps) => {
+  const [isPending, startTransition] = useTransition();
   const [loading, setLoading] = useState(false);
   const [scores, setScores] = useState({
     feasibility_score: [5],
@@ -27,46 +33,48 @@ export const EvaluationForm = ({ idea, profile, onEvaluationSubmitted, database 
   });
   const [feedback, setFeedback] = useState("");
   const [recommendation, setRecommendation] = useState("");
+  const [formErrors, setFormErrors] = useState<Record<string, string[] | undefined>>({});
 
   const { toast } = useToast();
   const { t, isRTL } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setFormErrors({});
 
-    try {
-      const evaluation = await database.evaluation.create({
-        data: {
-          idea_id: idea.id,
-          evaluator_id: profile.id,
-          feasibility_score: scores.feasibility_score[0],
-          impact_score: scores.impact_score[0],
-          innovation_score: scores.innovation_score[0],
-          overall_score: scores.overall_score[0],
-          feedback,
-          recommendation,
+    const payload: CreateEvaluationPayload = {
+      idea_id: idea.id,
+      evaluator_id: profile.id,
+      feasibility_score: scores.feasibility_score[0],
+      impact_score: scores.impact_score[0],
+      innovation_score: scores.innovation_score[0],
+      overall_score: scores.overall_score[0],
+      feedback: feedback || undefined,
+      recommendation,
+    };
+
+    startTransition(async () => {
+      const result = await createEvaluation(payload);
+
+      if (result?.error) {
+        if (result.details) {
+          setFormErrors(result.details as Record<string, string[] | undefined>);
+          toast({
+            title: "Error",
+            description: "Please check the form for errors.",
+            variant: "destructive",
+          });
+        } else {
+          toast({ title: "Error", description: result.error, variant: "destructive" });
         }
-      });
-
-      if (!evaluation) throw new Error("Failed to submit evaluation");
-
-      toast({
-        title: "Evaluation Submitted",
-        description: "Your evaluation has been submitted successfully!",
-      });
-
-      onEvaluationSubmitted();
-    } catch (error) {
-      console.error("Error submitting evaluation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to submit evaluation",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+      } else {
+        toast({
+          title: "Evaluation Submitted",
+          description: "Your evaluation has been submitted successfully!",
+        });
+        onEvaluationSubmitted();
+      }
+    });
   };
 
   const updateScore = (scoreType: keyof typeof scores, value: number[]) => {
@@ -210,9 +218,9 @@ export const EvaluationForm = ({ idea, profile, onEvaluationSubmitted, database 
             </div>
 
             <div className={`flex justify-end space-x-4 ${isRTL ? 'space-x-reverse' : ''}`}>
-              <Button type="submit" disabled={loading} className="flex items-center gap-2">
+              <Button type="submit" disabled={isPending} className="flex items-center gap-2">
                 <Star className="h-4 w-4" />
-                {loading ? "Submitting..." : "Submit Evaluation"}
+                {(isPending || loading) ? "Submitting..." : "Submit Evaluation"}
               </Button>
             </div>
           </form>

@@ -14,14 +14,9 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Database } from "lucide-react";
 
-interface DashboardProps {
-  user: User;
-}
-
 interface DashboardClientProps {
   user: User;
   profile: Profile | null;
-  evaluations: Evaluation[];
   allIdeas: Idea[];
   userCount: number;
 }
@@ -29,7 +24,6 @@ interface DashboardClientProps {
 export function DashboardClient({
   user,
   profile: initialProfile,
-  evaluations,
   allIdeas,
   userCount,
 }: Readonly<DashboardClientProps>) {
@@ -79,8 +73,8 @@ export function DashboardClient({
   }
 
   // If the profile is not set up, force the user to complete it.
-  if (!profile?.role) {
-    return <ProfileSetup user={user} profile={profile!} onProfileUpdate={handleProfileUpdate} />;
+  if (!profile) {
+    return <ProfileSetup user={user} profile={profile} onProfileUpdate={handleProfileUpdate} />;
   }
 
   const renderDashboardByRole = () => {
@@ -93,7 +87,6 @@ export function DashboardClient({
           <EvaluatorDashboard
             user={user}
             profile={profile}
-            pendingEvaluations={evaluations}
             activeView={activeView}
           />
         );

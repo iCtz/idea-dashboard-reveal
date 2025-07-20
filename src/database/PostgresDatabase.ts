@@ -15,7 +15,6 @@ import {
   UpdateData,
 } from "./IDatabase"; // Adjust path to your IDatabase interface file
 import { TYPES, type DatabaseConfig } from "@/types/dbtypes";
-import { PostgresTransactionDatabase } from "./PostgresTransactionDatabase";
 
 @injectable()
 export class PostgresDatabase implements IDatabase {
@@ -121,7 +120,8 @@ export class PostgresDatabase implements IDatabase {
       throw new Error("Transaction not supported on this client");
     }
     return (this.prisma as PrismaClient).$transaction(async (prismaTx) => {
-      const txDatabase = new PostgresTransactionDatabase(prismaTx);
+      const { PostgresTransactionDatabase } = await import("./PostgresTransactionDatabase");
+      const txDatabase  = new PostgresTransactionDatabase(prismaTx);
       return fn(txDatabase);
     });
   }

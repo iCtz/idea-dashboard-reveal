@@ -17,7 +17,6 @@ import { FileUploadField } from "./FileUploadField";
 import { MultiSelectDropdown } from "./MultiSelectDropdown";
 import { useListOfValues } from "@/hooks/useListOfValues";
 import { logger } from "@/lib/logger";
-import { Decimal } from "@prisma/client/runtime/library";
 
 interface IdeaSubmissionFormProps {
   profile: Profile;
@@ -364,16 +363,14 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
     setFormErrors({});
 
     const scoreStr = formData.strategic_alignment_score;
-    const costStr = formData.implementation_cost;
-    const roiStr = formData.expected_roi;
 
-    const payload: CreateIdeaPayload = {
+    const payload = {
       title: formData.title,
       description: formData.description,
       category: formData.category as IdeaCategory,
       submitterId: profile.id,
-      implementationCost: costStr ? new Decimal(costStr) : null,
-      expectedRoi: roiStr ? new Decimal(roiStr) : null,
+      implementationCost: formData.implementation_cost || null,
+      expectedRoi: formData.expected_roi || null,
       strategicAlignmentScore: scoreStr ? parseInt(scoreStr, 10) : null,
       status,
       // strategicAlignment,

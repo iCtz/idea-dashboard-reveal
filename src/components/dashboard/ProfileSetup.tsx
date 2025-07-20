@@ -11,14 +11,14 @@ import { updateProfile } from "@/app/dashboard/actions";
 
 interface ProfileSetupProps {
   user: User;
-  profile: Profile;
+  profile: Profile | null;
   onProfileUpdate: (profile: Profile) => void;
 }
 
 export function ProfileSetup({ user, profile, onProfileUpdate }: Readonly<ProfileSetupProps>) {
   const [isPending, startTransition] = useTransition();
   const [loading, setLoading] = useState(false);
-  const [fullName, setFullName] = useState(profile.full_name || "");
+  const [fullName, setFullName] = useState(profile?.full_name || "");
   const [department, setDepartment] = useState("");
   const [role, setRole] = useState<UserRole>("submitter");
   const { toast } = useToast();
@@ -44,8 +44,8 @@ export function ProfileSetup({ user, profile, onProfileUpdate }: Readonly<Profil
     // Start Transition
     startTransition(async () => {
       const result = await updateProfile({
-        id: profile.id,
-        email: profile.email,
+        id: user.id,
+        email: user.email || "",
         fullName,
         department,
         role: role as string as "submitter" | "evaluator" | "management",

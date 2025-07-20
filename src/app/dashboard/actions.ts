@@ -6,10 +6,10 @@ import { getDatabase } from "@/database";
 import { container } from "@/lib/inversify.config";
 import { IdeaService, type CreateIdeaPayload } from "@/services/IdeaService";
 import { TYPES } from "@/types/dbtypes";
-import { DashboardService, type ManagementDashboardData, type SubmitterDashboardData } from "@/services/DashboardService";
+import { DashboardService, type ManagementDashboardData, type SubmitterDashboardData, type EvaluatorDashboardData, type CreateEvaluationPayload } from "@/services/DashboardService";
 import { logger } from "@/lib/logger";
 import { auth } from "@/../auth";
-import { AttachmentFileType, IdeaCategory, IdeaStatus } from "@prisma/client";
+import { AttachmentFileType, Evaluation, Idea, Profile, IdeaCategory, IdeaStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { Decimal } from "@prisma/client/runtime/library";
 import { uploadFile } from "@/utils/upload";
@@ -27,12 +27,23 @@ const CreateIdeaSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters long."),
   category: z.nativeEnum(IdeaCategory),
   submitterId: z.string().uuid(),
-  implementationCost: z.any().refine(val => val === null || Decimal.isDecimal(val), { message: "Invalid decimal value" }).nullable(),
-  expectedRoi: z.any().refine(val => val === null || Decimal.isDecimal(val), { message: "Invalid decimal value" }).nullable(),
+  implementationCost: z.string().nullable().transform(val => val ? new Decimal(val) : null),
+  expectedRoi: z.string().nullable().transform(val => val ? new Decimal(val) : null),
   strategicAlignmentScore: z.number().int().min(1).max(10).nullable(),
   status: z.nativeEnum(IdeaStatus),
   language: z.string().min(2),
   strategicAlignment: z.array(z.string()),
+});
+
+const CreateEvaluationSchema = z.object({
+  idea_id: z.string().uuid(),
+  evaluator_id: z.string().uuid(),
+  feasibility_score: z.number().int().min(1).max(10),
+  impact_score: z.number().int().min(1).max(10),
+  innovation_score: z.number().int().min(1).max(10),
+  overall_score: z.number().int().min(1).max(10),
+  feedback: z.string().optional(),
+  recommendation: z.string().min(1, "Recommendation is required."),
 });
 
 export async function updateProfile(payload: UpdateProfilePayload) {
@@ -117,6 +128,31 @@ export async function createIdeaWithFiles(formData: FormData) {
   }
 }
 
+export async function createEvaluation(payload: CreateEvaluationPayload) {
+  try {
+    const validatedPayload = CreateEvaluationSchema.parse(payload);
+
+    const dashboardService = container.get<DashboardService>(TYPES.DashboardService);
+    const evaluation = await dashboardService.createEvaluation(validatedPayload);
+
+    revalidatePath("/dashboard");
+    return { success: true, evaluation };
+  } catch (error) {
+    logger.error("Failed to create evaluation:", (error as Error).message);
+    if (error instanceof z.ZodError) {
+      return {
+        error: "Validation failed",
+        details: error.flatten().fieldErrors,
+      };
+    }
+    return {
+      error: "Failed to submit evaluation.",
+      details: (error as Error).message || "Unknown error",
+    };
+  }
+}
+
+
 export async function getManagementDashboardData(): Promise<ManagementDashboardData | null> {
   try {
     const dashboardService = container.get<DashboardService>(TYPES.DashboardService);
@@ -162,5 +198,21 @@ export async function getSubmitterDashboardData(): Promise<SubmitterDashboardDat
   }
 }
 
-export type { CreateIdeaPayload, ManagementDashboardData, SubmitterDashboardData };
+export async function getEvaluatorDashboardData(): Promise<EvaluatorDashboardData | null> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new Error("User not authenticated");
+    }
+
+    const dashboardService = container.get<DashboardService>(TYPES.DashboardService);
+    const data = await dashboardService.getEvaluatorDashboardData(session.user.id);
+    return data;
+  } catch (error) {
+    logger.error("Failed to fetch evaluator dashboard data:", (error as Error).message);
+    return null;
+  }
+}
+
+export type { CreateIdeaPayload, ManagementDashboardData, SubmitterDashboardData, EvaluatorDashboardData, CreateEvaluationPayload };
 

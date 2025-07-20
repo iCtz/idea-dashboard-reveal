@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Idea, Profile, Evaluation, User } from "@prisma/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,56 +6,34 @@ import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Eye, Star, Clock, CheckCircle } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { EvaluationForm } from "./EvaluationForm";
-import { db } from "@lib/db";
+import { getEvaluatorDashboardData, type EvaluatorDashboardData } from "@/app/dashboard/actions";
 
 interface EvaluatorDashboardProps {
   user: User;
   profile: Profile;
-  pendingEvaluations: Evaluation[];
   activeView: string;
 }
 
-export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, profile, pendingEvaluations, activeView }) => {
+export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, profile, activeView }) => {
   const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [evaluations, setEvaluations] = useState<EvaluatorDashboardData>();
   const [loading, setLoading] = useState(true);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [showEvaluationForm, setShowEvaluationForm] = useState(false);
   const { t, isRTL } = useLanguage();
 
   const fetchData = async () => {
-    try {
-      // Fetch ideas that are ready for evaluation
-      const ideasData = await db.idea.findMany({
-        where: {
-          status: {
-            in: ['submitted', 'under_review']
-          }
-        },
-        orderBy: {
-          submitted_at: "asc"
-        },
-      });
-
-      if (!ideasData) throw new Error("Failed to fetch ideas");
-      setIdeas(ideasData || []);
-
-      // Fetch evaluator's existing evaluations
-      const evaluationsData = await db.evaluation.findMany({
-        where: {
-          evaluator_id: profile.id,
-        }
-      });
-
-      if (!evaluationsData) throw new Error("Failed to fetch evaluations");
-      setEvaluations(evaluationsData || []);
-
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
+    setLoading(true);
+    const data = await getEvaluatorDashboardData();
+    if (data) {
+      setEvaluations(data);
     }
+    setLoading(false);
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleEvaluationSubmitted = () => {
     setShowEvaluationForm(false);
@@ -69,7 +47,7 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
   };
 
   const isIdeaEvaluated = (ideaId: string) => {
-    return evaluations.some(evaluation => evaluation.idea_id === ideaId);
+    return evaluations?.myEvaluations.some(evaluation => evaluation.idea_id === ideaId);
   };
 
   const getEvaluationStats = () => {
@@ -80,7 +58,7 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
       total: ideas.length,
       pending: pendingIdeas.length,
       evaluated: evaluatedIdeas.length,
-      totalEvaluations: evaluations.length,
+      totalEvaluations: evaluations?.myEvaluations.length,
 
     };
   };
@@ -93,7 +71,6 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
         idea={selectedIdea}
         profile={profile}
         onEvaluationSubmitted={handleEvaluationSubmitted}
-        database={db}
       />
     );
   }

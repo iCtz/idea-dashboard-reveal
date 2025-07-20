@@ -1,6 +1,6 @@
 
 import "reflect-metadata";
-import type { Idea } from "@prisma/client";
+import { type Idea, type Evaluation, IdeaStatus } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import type { IDatabase } from "@/database/IDatabase";
 import { TYPES } from "@/types/dbtypes";
@@ -22,6 +22,21 @@ export interface SubmitterStats {
   rejected: number;
 }
 
+export interface CreateEvaluationPayload {
+  idea_id: string;
+  evaluator_id: string;
+  feasibility_score: number;
+  impact_score: number;
+  innovation_score: number;
+  overall_score: number;
+  feedback: string | undefined;
+  recommendation: string;
+}
+
+export interface EvaluatorDashboardData {
+  ideasForEvaluation: Idea[];
+  myEvaluations: Evaluation[];
+}
 
 export interface ChartData {
   name: string;
@@ -96,5 +111,29 @@ export class DashboardService {
 
     logger.performance(`Submitter dashboard data retrieval for ${submitterId}`, start);
     return { stats, ideas };
+  }
+
+  public async getEvaluatorDashboardData(evaluatorId: string): Promise<EvaluatorDashboardData | null> {
+	const start = Date.now();
+
+	const ideasForEvaluation = await this.db.find("Idea", { status: (IdeaStatus.submitted, IdeaStatus.under_review) }, { submitted_at: "asc" });
+
+	const myEvaluations = await this.db.find("Evaluation", { evaluator_id: evaluatorId }, { created_at: "desc" });
+
+	logger.performance(`Evaluator dashboard data retrieval for ${evaluatorId}`, start);
+	return { ideasForEvaluation, myEvaluations };
+  }
+
+  public async createEvaluation(payload: CreateEvaluationPayload) {
+    return await this.db.create("Evaluation", {
+      idea_id: payload.idea_id,
+      evaluator_id: payload.evaluator_id,
+      feasibility_score: payload.feasibility_score,
+      impact_score: payload.impact_score,
+      innovation_score: payload.innovation_score,
+      overall_score: payload.overall_score,
+      feedback: payload.feedback || null,
+      recommendation: payload.recommendation,
+    });
   }
 }

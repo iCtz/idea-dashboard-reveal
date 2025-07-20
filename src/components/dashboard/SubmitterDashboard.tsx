@@ -9,6 +9,7 @@ import { IdeaSubmissionForm } from "./IdeaSubmissionForm";
 import { IdeaCard } from "./IdeaCard";
 import { useLanguage } from "@/hooks/useLanguage";
 import { getSubmitterDashboardData, type SubmitterDashboardData } from "@/app/dashboard/actions";
+import { logger } from "@/lib/logger";
 
 const initialData: SubmitterDashboardData = {
   stats: {
@@ -31,6 +32,8 @@ export const SubmitterDashboard: React.FC<{ profile: Profile, activeView: string
     const data = await getSubmitterDashboardData();
     if (data) {
       setDashboardData(data);
+    }else{
+      logger.error("unexpected error while fetching submitter data")
     };
     setLoading(false);
   }, []);

@@ -3,6 +3,7 @@ import { Container } from "inversify";
 import { PrismaClient } from '@prisma/client';
 import { UserService } from "@/services/UserService";
 import { IdeaService } from "@/services/IdeaService"; // Import IdeaService
+import { DashboardService } from "@/services/DashboardService"; // Import IdeaService
 import { PostgresDatabase } from "@/database/PostgresDatabase";
 import { SupabaseDatabase } from "@/database/SupabaseDatabase";
 import { IDatabase } from "@/database/IDatabase";
@@ -32,5 +33,6 @@ if (process.env.USE_LOCAL_AUTH === "true") {
 
 container.bind<UserService>(TYPES.UserService).to(UserService);
 container.bind<IdeaService>(TYPES.IdeaService).to(IdeaService);
+container.bind<IdeaService>(TYPES.DashboardService).to(DashboardService);
 
 export { container };
