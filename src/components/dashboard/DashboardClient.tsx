@@ -13,10 +13,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Database } from "lucide-react";
+import type { EvaluatorDashboardData } from "@/app/dashboard/actions";
 
 interface DashboardClientProps {
   user: User;
   profile: Profile | null;
+  evaluatorData: EvaluatorDashboardData | null;
   allIdeas: Idea[];
   userCount: number;
 }
@@ -24,6 +26,7 @@ interface DashboardClientProps {
 export function DashboardClient({
   user,
   profile: initialProfile,
+  evaluatorData,
   allIdeas,
   userCount,
 }: Readonly<DashboardClientProps>) {
@@ -73,7 +76,7 @@ export function DashboardClient({
   }
 
   // If the profile is not set up, force the user to complete it.
-  if (!profile) {
+  if (!profile?.role) {
     return <ProfileSetup user={user} profile={profile} onProfileUpdate={handleProfileUpdate} />;
   }
 
@@ -87,6 +90,7 @@ export function DashboardClient({
           <EvaluatorDashboard
             user={user}
             profile={profile}
+            evaluatorData={evaluatorData}
             activeView={activeView}
           />
         );

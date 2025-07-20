@@ -4,6 +4,7 @@ import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { db } from "@lib/db";
 import type { Idea, Profile, Evaluation, User } from "@prisma/client";
 import { AuthPage } from "@/components/auth/AuthPage";
+import { getEvaluatorDashboardData, type EvaluatorDashboardData } from "@/app/dashboard/actions";
 import { LanguageProvider } from "@/contexts/LanguageProvider";
 
 /**
@@ -26,26 +27,14 @@ export default async function DashboardPage() {
 
   // Conditionally fetch data based on the user's role
   let ideas: Idea[] = [];
-  let evaluations: Evaluation[] = [];
+  let evaluatorDashboardData: EvaluatorDashboardData | null = null;
   let allIdeas: Idea[] = [];
   let userCount = 0;
 
   if (profile?.role === "submitter") {
     ideas = await db.idea.findMany({ where: { submitter_id: session.user.id }, orderBy: { created_at: "desc" } });
   } else if (profile?.role === "evaluator") {
-    [ideas, evaluations] = await Promise.all([
-      db.idea.findMany({
-        where: {
-          status: {
-            in: ['submitted', 'under_review']
-          }
-        },
-        orderBy: {
-          created_at: 'desc'
-        }
-      }),
-      db.evaluation.findMany({ where: { evaluator_id: session.user.id } }),
-    ]);
+    evaluatorDashboardData = await getEvaluatorDashboardData();
   } else if (profile?.role === "management") {
     [allIdeas, userCount] = await Promise.all([
       db.idea.findMany({ orderBy: { created_at: "desc" } }),
@@ -58,10 +47,11 @@ export default async function DashboardPage() {
     <LanguageProvider>
       <DashboardClient
         user={session.user as User}
+        evaluatorData={evaluatorDashboardData}
         profile={profile}
         allIdeas={allIdeas}
         userCount={userCount}
       />
     </LanguageProvider>
-    );
+  );
 }

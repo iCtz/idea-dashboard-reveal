@@ -24,7 +24,6 @@ const FieldError = ({ error }: { error?: string[] }) => {
 
 export const EvaluationForm = ({ idea, profile, onEvaluationSubmitted }: EvaluationFormProps) => {
   const [isPending, startTransition] = useTransition();
-  const [loading, setLoading] = useState(false);
   const [scores, setScores] = useState({
     feasibility_score: [5],
     impact_score: [5],
@@ -215,12 +214,13 @@ export const EvaluationForm = ({ idea, profile, onEvaluationSubmitted }: Evaluat
                   <SelectItem value="reject">Reject</SelectItem>
                 </SelectContent>
               </Select>
+              <FieldError error={formErrors.recommendation} />
             </div>
 
             <div className={`flex justify-end space-x-4 ${isRTL ? 'space-x-reverse' : ''}`}>
               <Button type="submit" disabled={isPending} className="flex items-center gap-2">
                 <Star className="h-4 w-4" />
-                {(isPending || loading) ? "Submitting..." : "Submit Evaluation"}
+                {isPending ? "Submitting..." : "Submit Evaluation"}
               </Button>
             </div>
           </form>

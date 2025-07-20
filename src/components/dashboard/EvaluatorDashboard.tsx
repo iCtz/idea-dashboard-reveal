@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import type { Idea, Profile, Evaluation, User } from "@prisma/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,39 +6,33 @@ import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Eye, Star, Clock, CheckCircle } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { EvaluationForm } from "./EvaluationForm";
-import { getEvaluatorDashboardData, type EvaluatorDashboardData } from "@/app/dashboard/actions";
+import { type EvaluatorDashboardData } from "@/app/dashboard/actions";
 
 interface EvaluatorDashboardProps {
   user: User;
   profile: Profile;
+  evaluatorData: EvaluatorDashboardData | null;
   activeView: string;
 }
 
-export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, profile, activeView }) => {
-  const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [evaluations, setEvaluations] = useState<EvaluatorDashboardData>();
-  const [loading, setLoading] = useState(true);
+export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, profile, evaluatorData, activeView }) => {
+const [loading, setLoading] = useState(true);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [showEvaluationForm, setShowEvaluationForm] = useState(false);
   const { t, isRTL } = useLanguage();
+  const { ideasForEvaluation = [], myEvaluations: evaluations = [] } = evaluatorData || {};
 
-  const fetchData = async () => {
-    setLoading(true);
-    const data = await getEvaluatorDashboardData();
-    if (data) {
-      setEvaluations(data);
-    }
-    setLoading(false);
-  };
-
+  // This is now just for simulating a loading state on initial render.
   useEffect(() => {
-    fetchData();
+    setLoading(false);
   }, []);
 
   const handleEvaluationSubmitted = () => {
     setShowEvaluationForm(false);
     setSelectedIdea(null);
-    fetchData();
+    // Data will be re-fetched by the server component on the next page load
+    // due to revalidatePath in the server action.
+    // For an immediate UI update, you might consider a client-side state update here.
   };
 
   const handleEvaluateIdea = (idea: Idea) => {
@@ -46,24 +40,27 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
     setShowEvaluationForm(true);
   };
 
-  const isIdeaEvaluated = (ideaId: string) => {
-    return evaluations?.myEvaluations.some(evaluation => evaluation.idea_id === ideaId);
-  };
+  const evaluatedIdeaIds = useMemo(() => {
+    return new Set(evaluations.map(e => e.idea_id));
+  }, [evaluations]);
 
-  const getEvaluationStats = () => {
-    const pendingIdeas = ideas.filter(idea => !isIdeaEvaluated(idea.id));
-    const evaluatedIdeas = ideas.filter(idea => isIdeaEvaluated(idea.id));
+  const isIdeaEvaluated = useCallback((ideaId: string) => {
+    return evaluatedIdeaIds.has(ideaId);
+  }, [evaluatedIdeaIds]);
+
+
+  const stats = useMemo(() => {
+    const pendingIdeas = ideasForEvaluation.filter(ideasForEvaluation => !isIdeaEvaluated(ideasForEvaluation.id));
+    const evaluatedIdeas = ideasForEvaluation.filter(ideasForEvaluation => isIdeaEvaluated(ideasForEvaluation.id));
 
     return {
-      total: ideas.length,
+      total: ideasForEvaluation.length,
       pending: pendingIdeas.length,
       evaluated: evaluatedIdeas.length,
-      totalEvaluations: evaluations?.myEvaluations.length,
+      totalEvaluations: evaluations.length,
 
     };
-  };
-
-  const stats = getEvaluationStats();
+  }, [ideasForEvaluation, evaluations, isIdeaEvaluated]);
 
   if (showEvaluationForm && selectedIdea) {
     return (
@@ -80,14 +77,14 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
       return <div className="text-center py-8">{t('common', 'loading')}</div>;
     }
 
-    if (ideas.length === 0) {
+    if (ideasForEvaluation.length === 0) {
       return (
         <Card>
           <CardContent className="py-8 text-center">
             <ClipboardCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-lg font-medium mb-2">{t('dashboard', 'no_ideas_assigned')}</p>
             <p className="text-muted-foreground">
-              {t('dashboard', 'check_back_later')}
+              {t('dashboard', 'evaluate') ?? 'Evaluate Idea'}
             </p>
           </CardContent>
         </Card>
@@ -96,7 +93,7 @@ export const EvaluatorDashboard: React.FC<EvaluatorDashboardProps> = ({ user, pr
 
     return (
       <div className="space-y-4">
-        {ideas.map((idea) => {
+        {ideasForEvaluation.map((idea) => {
           const isEvaluated = isIdeaEvaluated(idea.id);
           return (
             <Card key={idea.id} className={isEvaluated ? "opacity-75" : ""}>
