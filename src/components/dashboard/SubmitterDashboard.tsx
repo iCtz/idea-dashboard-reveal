@@ -1,46 +1,27 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import type { Profile, User } from "@prisma/client";
+import type { Profile } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Lightbulb, Clock, CheckCircle, TrendingUp } from "lucide-react";
 import { IdeaSubmissionForm } from "./IdeaSubmissionForm";
 import { IdeaCard } from "./IdeaCard";
-import { useLanguage } from "@/hooks/useLanguage";
-import { getSubmitterDashboardData, type SubmitterDashboardData } from "@/app/dashboard/actions";
-import { logger } from "@/lib/logger";
+import { type SubmitterDashboardData } from "@/app/dashboard/actions";
+import { useSubmitterDashboard } from "@/hooks/dashboard/useSubmitterDashboard";
 
-const initialData: SubmitterDashboardData = {
-  stats: {
-    total: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-  },
-  ideas: [],
-};
+interface SubmitterDashboardProps {
+  profile: Profile;
+  activeView: string;
+  // Use a more specific type that reflects the serialized data
+  submitterData: SubmitterDashboardData | null;
+}
 
-export const SubmitterDashboard: React.FC<{ profile: Profile, activeView: string }> = ({ profile, activeView }) => {
-  // The ideas are now passed as props, no need for local state to hold them.
-  const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState<SubmitterDashboardData>(initialData);
-  const { t } = useLanguage();
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const data = await getSubmitterDashboardData();
-    if (data) {
-      setDashboardData(data);
-    }else{
-      logger.error("unexpected error while fetching submitter data")
-    };
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+export const SubmitterDashboard: React.FC<SubmitterDashboardProps> = ({ profile, activeView, submitterData }) => {
+  const {
+    loading,
+    dashboardData,
+    t,
+  } = useSubmitterDashboard(submitterData);
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">
@@ -173,7 +154,7 @@ export const SubmitterDashboard: React.FC<{ profile: Profile, activeView: string
 
   switch (activeView) {
     case "submit":
-      return <IdeaSubmissionForm profile={profile} onIdeaSubmitted={() => dashboardData.stats} />;
+      return <IdeaSubmissionForm profile={profile} onIdeaSubmitted={() => { /* Re-fetch handled by server */ }} />;
     case "my-ideas":
       return renderMyIdeas();
     case "ideas":

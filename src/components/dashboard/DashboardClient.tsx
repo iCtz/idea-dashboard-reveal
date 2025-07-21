@@ -1,23 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SubmitterDashboard } from "./SubmitterDashboard";
 import { EvaluatorDashboard } from "./EvaluatorDashboard";
 import { ManagementDashboard } from "./ManagementDashboard";
 import { ProfileSetup } from "./ProfileSetup";
-import type { Idea, Profile, Evaluation, User } from "@prisma/client";
-import { forceSeedSampleData } from "@/utils/sampleDataSeeder";
-import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/hooks/useLanguage";
+import type { Idea,Profile, User } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Database } from "lucide-react";
-import type { EvaluatorDashboardData } from "@/app/dashboard/actions";
+import type { EvaluatorDashboardData, SubmitterDashboardData } from "@/app/dashboard/actions";
+import { useDashboardClient } from "@/hooks/dashboard/useDashboardClient";
 
 interface DashboardClientProps {
   user: User;
   profile: Profile | null;
+  submitterData: SubmitterDashboardData | null;
   evaluatorData: EvaluatorDashboardData | null;
   allIdeas: Idea[];
   userCount: number;
@@ -26,46 +24,21 @@ interface DashboardClientProps {
 export function DashboardClient({
   user,
   profile: initialProfile,
+  submitterData,
   evaluatorData,
   allIdeas,
   userCount,
 }: Readonly<DashboardClientProps>) {
-  const [profile, setProfile] = useState<Profile | null>(initialProfile);
-  const [loading, setLoading] = useState(true);
-  const [seeding, setSeeding] = useState(false);
-  const [activeView, setActiveView] = useState("dashboard");
-  const { toast } = useToast();
-  const { t } = useLanguage();
-
-  useEffect(() => {
-    setLoading(false);
-  }, []);
-
-  const handleProfileUpdate = (updatedProfile: Profile) => {
-    setProfile(updatedProfile);
-  };
-
-  const handleForceSeed = async () => {
-    setSeeding(true);
-    setLoading(true);
-
-    try {
-      await forceSeedSampleData();
-      toast({
-        title: "Success",
-        description: "Sample data has been seeded successfully!",
-      });
-    } catch (error) {
-      console.error("Error seeding data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to seed sample data",
-        variant: "destructive",
-      });
-    } finally {
-      setSeeding(false);
-    }
-  };
+  const {
+    profile,
+    loading,
+    seeding,
+    activeView,
+    t,
+    handleProfileUpdate,
+    handleForceSeed,
+    setActiveView,
+  } = useDashboardClient(initialProfile);
 
   if (loading) {
     return (
@@ -101,6 +74,7 @@ export function DashboardClient({
       default:
         return (
           <SubmitterDashboard
+            submitterData={submitterData}
             profile={profile}
             activeView={activeView}
           />

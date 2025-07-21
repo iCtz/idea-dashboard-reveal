@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ClipboardCheck, Eye, Star, Clock, CheckCircle } from "lucide-react";
 import { EvaluationForm } from "./EvaluationForm";
 import { type EvaluatorDashboardData } from "@/app/dashboard/actions";
-import { useEvaluatorDashboard } from "@/hooks/useEvaluatorDashboard";
+import { useEvaluatorDashboard } from "@/hooks/dashboard/useEvaluatorDashboard";
 
 interface EvaluatorDashboardProps {
   user: User;

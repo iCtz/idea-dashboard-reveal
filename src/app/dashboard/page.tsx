@@ -4,7 +4,7 @@ import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { db } from "@lib/db";
 import type { Idea, Profile, Evaluation, User } from "@prisma/client";
 import { AuthPage } from "@/components/auth/AuthPage";
-import { getEvaluatorDashboardData, type EvaluatorDashboardData } from "@/app/dashboard/actions";
+import { getEvaluatorDashboardData, getSubmitterDashboardData, type EvaluatorDashboardData, type SubmitterDashboardData } from "@/app/dashboard/actions";
 import { LanguageProvider } from "@/contexts/LanguageProvider";
 
 /**
@@ -26,13 +26,13 @@ export default async function DashboardPage() {
   const profile: Profile | null = await db.profile.findUnique({ where: { id: session.user.id } });
 
   // Conditionally fetch data based on the user's role
-  let ideas: Idea[] = [];
+  let submitterDashboardData: SubmitterDashboardData | null = null;
   let evaluatorDashboardData: EvaluatorDashboardData | null = null;
   let allIdeas: Idea[] = [];
   let userCount = 0;
 
   if (profile?.role === "submitter") {
-    ideas = await db.idea.findMany({ where: { submitter_id: session.user.id }, orderBy: { created_at: "desc" } });
+    submitterDashboardData = await getSubmitterDashboardData();
   } else if (profile?.role === "evaluator") {
     evaluatorDashboardData = await getEvaluatorDashboardData();
   } else if (profile?.role === "management") {
@@ -47,6 +47,7 @@ export default async function DashboardPage() {
     <LanguageProvider>
       <DashboardClient
         user={session.user as User}
+        submitterData={submitterDashboardData}
         evaluatorData={evaluatorDashboardData}
         profile={profile}
         allIdeas={allIdeas}
