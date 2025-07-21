@@ -5,6 +5,8 @@ import { inject, injectable } from "inversify";
 import type { IDatabase } from "@/database/IDatabase";
 import { TYPES } from "@/types/dbtypes";
 import { logger } from "@lib/logger";
+import { convertDecimalsToNumbers } from "@lib/serialization";
+import type { Serializable } from "@/types/serializationTypes";
 
 export interface DashboardStats {
   totalIdeas: number;
@@ -58,12 +60,12 @@ export interface SubmitterDashboardData {
 export class DashboardService {
   constructor(@inject(TYPES.IDatabase) private readonly db: IDatabase) {}
 
-  public async getManagementDashboardData(): Promise<ManagementDashboardData> {
+  public async getManagementDashboardData(): Promise<Serializable<ManagementDashboardData>> {
     const start = Date.now();
 
     const [ideas, totalUsers] = await Promise.all([
       this.db.find("Idea", {}),
-      this.db.count("User", {}),
+      this.db.count("User"),
     ]);
 
     const totalIdeas = ideas.length;
@@ -94,10 +96,10 @@ export class DashboardService {
     };
 
     logger.performance("Dashboard data retrieval", start);
-    return data;
+    return convertDecimalsToNumbers(data) as Serializable<ManagementDashboardData>;
   }
 
-  public async getSubmitterDashboardData(submitterId: string): Promise<SubmitterDashboardData> {
+  public async getSubmitterDashboardData(submitterId: string): Promise<Serializable<SubmitterDashboardData>> {
     const start = Date.now();
 
     const ideas = await this.db.find("Idea", { submitter_id: submitterId }, { created_at: "desc" });
@@ -110,18 +112,22 @@ export class DashboardService {
     };
 
     logger.performance(`Submitter dashboard data retrieval for ${submitterId}`, start);
-    return { stats, ideas };
+    return convertDecimalsToNumbers({ stats, ideas }) as Serializable<SubmitterDashboardData>;
   }
 
-  public async getEvaluatorDashboardData(evaluatorId: string): Promise<EvaluatorDashboardData | null> {
-	const start = Date.now();
+  public async getEvaluatorDashboardData(evaluatorId: string): Promise<Serializable<EvaluatorDashboardData> | null> {
+    const start = Date.now();
 
-	const ideasForEvaluation = await this.db.find("Idea", { status: (IdeaStatus.submitted, IdeaStatus.under_review) }, { submitted_at: "asc" });
+    const ideasForEvaluation = await this.db.find("Idea", {
+      status: {
+        in: [IdeaStatus.submitted, IdeaStatus.under_review],
+      },
+    }, { submitted_at: "asc" });
 
-	const myEvaluations = await this.db.find("Evaluation", { evaluator_id: evaluatorId }, { created_at: "desc" });
+    const myEvaluations = await this.db.find("Evaluation", { evaluator_id: evaluatorId }, { created_at: "desc" });
 
-	logger.performance(`Evaluator dashboard data retrieval for ${evaluatorId}`, start);
-	return { ideasForEvaluation, myEvaluations };
+    logger.performance(`Evaluator dashboard data retrieval for ${evaluatorId}`, start);
+    return convertDecimalsToNumbers({ ideasForEvaluation, myEvaluations }) as Serializable<EvaluatorDashboardData>;
   }
 
   public async createEvaluation(payload: CreateEvaluationPayload) {

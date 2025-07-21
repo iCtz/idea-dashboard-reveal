@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import { inject, injectable } from "inversify";
 import type { IDatabase } from "@/database/IDatabase";
-// import type { AttachmentFileType, Idea, IdeaCategory, IdeaStatus, IdeaAttachment } from "@prisma/client";
 import type { AttachmentFileType, Idea, IdeaCategory, IdeaStatus } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import { TYPES } from "@/types/dbtypes";

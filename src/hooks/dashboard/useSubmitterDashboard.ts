@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 import type { SubmitterDashboardData } from "@/app/dashboard/actions";
 

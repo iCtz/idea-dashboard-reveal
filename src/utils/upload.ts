@@ -1,5 +1,4 @@
 
-import { AttachmentFileType } from "@prisma/client";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 

@@ -40,7 +40,7 @@ export class SupabaseDatabase implements IDatabase {
 
   async find<T extends ModelName>(
     model: T,
-    where: Where<ModelType<T>>,
+    where: Where<T>,
     orderBy?: OrderBy
   ): Promise<ModelType<T>[]> {
     // The `where` and `orderBy` are Prisma types, but Supabase expects a different format.
@@ -59,7 +59,7 @@ export class SupabaseDatabase implements IDatabase {
 
     const { data, error } = await query;
     if (error) throw error;
-    return (data as ModelType<T>[]) || [];
+    return (data) || [];
   }
 
   async findOne<T extends ModelName>(
@@ -82,7 +82,7 @@ export class SupabaseDatabase implements IDatabase {
 
   async count<T extends ModelName>(
     model: T,
-    where?: Where<ModelType<T>>
+    where?: Where<T>
   ): Promise<number> {
     const { count, error } = await this.supabase
       .from(model.toLowerCase())
