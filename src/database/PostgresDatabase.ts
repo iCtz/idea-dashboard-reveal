@@ -58,8 +58,8 @@ export class PostgresDatabase implements IDatabase {
   //     : T extends "IdeaAttachment" ? Prisma.IdeaAttachmentDelegate
   //     : never;
 
-  //   return this.prisma[model.toLowerCase() as keyof PrismaClient] as Delegate;
-  // }
+  // //  return this.prisma[model.toLowerCase() as keyof PrismaClient] as Delegate;
+  // // }
 
 	async query<T>(queryString: string, params: unknown[]): Promise<T[]> {
     return this.prisma.$queryRawUnsafe<T[]>(queryString, ...params);
@@ -119,7 +119,7 @@ export class PostgresDatabase implements IDatabase {
     if (!('$transaction' in this.prisma)) {
       throw new Error("Transaction not supported on this client");
     }
-    return (this.prisma as PrismaClient).$transaction(async (prismaTx) => {
+    return (this.prisma).$transaction(async (prismaTx) => {
       const { PostgresTransactionDatabase } = await import("./PostgresTransactionDatabase");
       const txDatabase  = new PostgresTransactionDatabase(prismaTx);
       return fn(txDatabase);

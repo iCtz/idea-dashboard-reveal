@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Lightbulb } from "lucide-react";
-import { createIdeaWithFiles, type CreateIdeaPayload } from "@/app/dashboard/actions";
+import { createIdeaWithFiles } from "@/app/dashboard/actions";
 import { IdeaCategory } from "@prisma/client";
 import { FileUploadField } from "./FileUploadField";
 import { MultiSelectDropdown } from "./MultiSelectDropdown";
@@ -339,7 +339,6 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
   };
 
   const handleSubmissionError = (error: { error: string, details: unknown }) => {
-    // logger.error("Error submitting idea:", (error as Error).message);
     logger.error("Error submitting idea:", error.details as string);
     if (error.details) {
       // Zod validation errors
@@ -387,7 +386,6 @@ export const IdeaSubmissionForm = ({ profile, onIdeaSubmitted }: IdeaSubmissionF
 
     startTransition(async () => {
       try {
-        // const result = await createIdeaWithFiles(payload, files);
         const result = await createIdeaWithFiles(ideaFormData);
 
         if (result?.error) {

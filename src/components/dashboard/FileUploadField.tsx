@@ -115,16 +115,26 @@ export const FileUploadField = ({
     <div className={`space-y-2 ${className}`}>
       <Label className={`text-sm font-medium ${isRTL ? 'text-right block' : 'text-left'}`}>{label}</Label>
 
-      <div
-        className={`
-          border-2 border-dashed rounded-lg p-4 transition-colors
-          ${dragOver ? 'border-primary bg-primary/5' : 'border-border'}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-primary/50'}
-        `}
+      <button
+        type="button"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        onClick={() => !disabled && fileInputRef.current?.click()}
+        onClick={() => {
+          if (!disabled) {
+            fileInputRef.current?.click();
+          }
+        }}
+        onKeyDown={(e) => {
+          if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
+            fileInputRef.current?.click();
+          }
+        }}
+        disabled={disabled}
+        className={`w-full border-2 border-dashed rounded-lg p-4 transition-colors text-left
+          ${dragOver ? 'border-primary bg-primary/5' : 'border-border'}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'}
+        `}
       >
         <div className="flex flex-col items-center justify-center text-center">
           <Upload className="h-8 w-8 text-muted-foreground mb-2" />
@@ -138,7 +148,7 @@ export const FileUploadField = ({
             } • Max {maxSizeMB}MB
           </Badge>
         </div>
-      </div>
+      </button>
 
       <Input
         ref={fileInputRef}
@@ -154,7 +164,7 @@ export const FileUploadField = ({
         <div className="space-y-2">
           {value.map((file, index) => (
             <div
-              key={index}
+              key={`${file.name}-${file.lastModified}`}
               className="flex items-center justify-between p-2 bg-muted rounded-md"
             >
               <div className="flex items-center space-x-2">
@@ -168,7 +178,6 @@ export const FileUploadField = ({
                 type="button"
                 variant="ghost"
                 size="sm"
-                role="button"
                 aria-label={`Remove ${file.name}`}
                 onClick={() => removeFile(index)}
                 disabled={disabled}

@@ -9,7 +9,7 @@ import { TYPES } from "@/types/dbtypes";
 import { DashboardService, type ManagementDashboardData, type SubmitterDashboardData, type EvaluatorDashboardData, type CreateEvaluationPayload } from "@/services/DashboardService";
 import { logger } from "@/lib/logger";
 import { auth } from "@/../auth";
-import { AttachmentFileType, Evaluation, Idea, Profile, IdeaCategory, IdeaStatus } from "@prisma/client";
+import { AttachmentFileType, IdeaCategory, IdeaStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { Decimal } from "@prisma/client/runtime/library";
 import { uploadFile } from "@/utils/upload";
@@ -82,8 +82,6 @@ export async function updateProfile(payload: UpdateProfilePayload) {
 }
 export async function createIdeaWithFiles(formData: FormData) {
   try {
-    // const attachments = await uploadAllFiles(files); // Extract to a helper
-    const rawData = Object.fromEntries(formData.entries());
 
     // Extract and parse the idea payload
     // 1. Extract and validate idea payload from FormData

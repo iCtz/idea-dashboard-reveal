@@ -2,7 +2,7 @@
 import { auth } from "@/../auth";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { db } from "@lib/db";
-import type { Idea, Profile, Evaluation, User } from "@prisma/client";
+import type { Idea, Profile, User } from "@prisma/client";
 import { AuthPage } from "@/components/auth/AuthPage";
 import { getEvaluatorDashboardData, getSubmitterDashboardData, type EvaluatorDashboardData, type SubmitterDashboardData } from "@/app/dashboard/actions";
 import { LanguageProvider } from "@/contexts/LanguageProvider";
