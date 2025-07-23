@@ -48,9 +48,6 @@ export class IdeaService {
         implemented_at: null,
         idea_reference_code: null,
         average_evaluation_score: null,
-        feasibility_study_url: null,
-        pricing_offer_url: null,
-        prototype_images_urls: [],
         current_stage: null,
         assigned_evaluator_id: null
       });

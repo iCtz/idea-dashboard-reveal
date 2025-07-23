@@ -5,6 +5,7 @@ import { inject, injectable } from "inversify";
 import type { IDatabase } from "@/database/IDatabase";
 import { TYPES } from "@/types/dbtypes";
 import { logger } from "@lib/logger";
+import { Decimal } from "@prisma/client/runtime/library";
 
 export interface DashboardStats {
   totalIdeas: number;
@@ -52,7 +53,18 @@ export interface ManagementDashboardData {
 export interface SubmitterDashboardData {
   stats: SubmitterStats;
   ideas: Idea[];
-  }
+}
+
+const convertDecimalToNumber = (value: Decimal | null): number | null => {
+  return value ? value.toNumber() : null;
+};
+
+const sanitizeIdea = (idea: Idea) => ({
+  ...idea,
+  implementation_cost: convertDecimalToNumber(idea.implementation_cost),
+  expected_roi: convertDecimalToNumber(idea.expected_roi),
+  average_evaluation_score: convertDecimalToNumber(idea.average_evaluation_score),
+});
 
 @injectable()
 export class DashboardService {
@@ -101,16 +113,17 @@ export class DashboardService {
     const start = Date.now();
 
     const ideas = await this.db.find("Idea", { submitter_id: submitterId }, { created_at: "desc" });
+    const sanitizedIdeas = ideas.map(sanitizeIdea); // Convert all Decimal fields
 
     const stats: SubmitterStats = {
-      total: ideas.length,
-      pending: ideas.filter(idea => ["submitted", "under_review"].includes(idea.status)).length,
-      approved: ideas.filter(idea => idea.status === "approved").length,
-      rejected: ideas.filter(idea => idea.status === "rejected").length,
+      total: sanitizedIdeas.length,
+      pending: sanitizedIdeas.filter(idea => ["submitted", "under_review"].includes(idea.status)).length,
+      approved: sanitizedIdeas.filter(idea => idea.status === "approved").length,
+      rejected: sanitizedIdeas.filter(idea => idea.status === "rejected").length,
     };
 
     logger.performance(`Submitter dashboard data retrieval for ${submitterId}`, start);
-    return { stats, ideas };
+    return { stats, ideas: sanitizedIdeas as unknown as Idea[] };
   }
 
   public async getEvaluatorDashboardData(evaluatorId: string): Promise<EvaluatorDashboardData | null> {

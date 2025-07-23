@@ -1,5 +1,6 @@
 
 import { Idea, IdeaAttachment, Profile, Evaluation, Translation, User, Session, Identity, ListOfValue } from "@/types/types"; // Adjust the import path as needed.
+import type { Prisma } from "@prisma/client";
 
 // Define your model names as a union type
 export type ModelName =
@@ -20,7 +21,18 @@ export type ModelType<T extends ModelName> =
 
 // --- ORM-Agnostic Generic Types ---
 // A simple key-value pair for basic queries.
-export type Where<T> = Partial<T>;
+// export type Where<T> = Partial<T>;
+export type Where<T extends ModelName> =
+  T extends "Idea" ? Prisma.IdeaWhereInput
+  : T extends "IdeaAttachment" ? Prisma.IdeaAttachmentWhereInput
+  : T extends "Profile" ? Prisma.ProfileWhereInput
+  : T extends "Evaluation" ? Prisma.EvaluationWhereInput
+  : T extends "translations" ? Prisma.TranslationWhereInput
+  : T extends "User" ? Prisma.UserWhereInput
+  : T extends "Session" ? Prisma.SessionWhereInput
+  : T extends "Identity" ? Prisma.IdentityWhereInput
+  : T extends "ListOfValue" ? Prisma.ListOfValueWhereInput
+  : Partial<ModelType<T>>;
 
 // A unique identifier, typically { id: string } or { email: string }
 export type WhereUnique<T> = Partial<T>;
@@ -44,7 +56,7 @@ export interface IDatabase {
 
   find<T extends ModelName>(
     model: T,
-    where: Where<ModelType<T>>,
+    where: Where<T>,
     orderBy?: OrderBy
   ): Promise<ModelType<T>[]>;
 
@@ -55,7 +67,7 @@ export interface IDatabase {
 
   count<T extends ModelName>(
     model: T,
-    where?: Where<ModelType<T>>
+    where?: Where<T>
   ): Promise<number>;
 
   create<T extends ModelName>(
