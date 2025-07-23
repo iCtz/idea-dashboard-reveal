@@ -19,6 +19,7 @@ enum UserRole {
   evaluator
   management
   ADMIN
+  USER
 
   @@schema("public")
 }
@@ -121,8 +122,6 @@ model Profile {
   assigned_evaluator_assignments EvaluatorAssignment[]        @relation("AssignedByManager")
   management_decisions           ManagementDecision[]         @relation("DecisionMadeBy")
   idea_revisions_requested       IdeaRevision[]               @relation("RevisionRequestedBy")
-  idea_status_logs_changed_by    IdeaStatusLog[]
-  idea_action_logs_performed_by  IdeaActionLog[]
 
   @@map("profiles")
   @@schema("public")
@@ -209,7 +208,7 @@ model IdeaAttachment {
   created_at  DateTime           @default(now()) @db.Timestamptz
 
   // Relations
-  idea     Idea    @relation(fields: [idea_id], references: [id], onDelete: Cascade)
+  idea     Idea    @relation(fields: [idea_id], references: [id])
   uploader Profile @relation("UploadedAttachments", fields: [uploaded_by], references: [id])
 
   @@map("idea_attachments")
