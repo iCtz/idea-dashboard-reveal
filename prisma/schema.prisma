@@ -19,7 +19,6 @@ enum UserRole {
   evaluator
   management
   ADMIN
-  USER
 
   @@schema("public")
 }
