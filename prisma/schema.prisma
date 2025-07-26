@@ -81,30 +81,34 @@ enum PriorityLevel {
   @@schema("public")
 }
 
-model Profile {
+model profiles {
   id                      String                @id @db.Uuid
-  email                   String                @unique
+  email                   String?               @unique
   full_name               String?
   role                    UserRole              @default(submitter)
   department              String?
   specialization          EvaluationType[]      @default([])
   is_active               Boolean?              @default(true)
+  is_verified             Boolean?              @default(true)
   password_reset_required Boolean?              @default(false)
   preferred_language      String?               @default("ar") @db.VarChar(2)
   profile_picture_url     String?
-  email_confirmed         Boolean?              @default(true)
+  email_confirmed         Boolean?              @default(false)
   created_at              DateTime              @default(now()) @db.Timestamptz
   updated_at              DateTime              @default(now()) @updatedAt @db.Timestamptz
   last_login              DateTime?             @db.Timestamptz
   blocked_at              DateTime?             @db.Timestamptz
+  created_by_id           String?               @db.Uuid
+  updated_by_id           String?               @db.Uuid
+  blocked_by_id           String?               @db.Uuid
 
   // User Management Relations
-  created_by_id String?  @db.Uuid
-  creator       Profile? @relation("CreatedProfiles", fields: [created_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  updated_by_id String?  @db.Uuid
-  updater       Profile? @relation("UpdatedProfiles", fields: [updated_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  blocked_by_id String?  @db.Uuid
-  blocker       Profile? @relation("BlockedProfiles", fields: [blocked_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  created_by String?  @db.Uuid
+  creator       profiles? @relation("CreatedProfiles", fields: [created_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  updated_by String?  @db.Uuid
+  updater       profiles? @relation("UpdatedProfiles", fields: [updated_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  blocked_by String?  @db.Uuid
+  blocker       profiles? @relation("BlockedProfiles", fields: [blocked_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   // Relations
   user                           User                         @relation(fields: [id], references: [id], onDelete: Cascade)
@@ -112,17 +116,21 @@ model Profile {
   uploaded_attachments           IdeaAttachment[]             @relation("UploadedAttachments")
   evaluations                    Evaluation[]
   comments                       IdeaComment[]
-  created_profiles               Profile[]                    @relation("CreatedProfiles")
-  updated_profiles               Profile[]                    @relation("UpdatedProfiles")
-  blocked_profiles               Profile[]                    @relation("BlockedProfiles")
+  created_profiles               profiles[]                   @relation("CreatedProfiles")
+  updated_profiles               profiles[]                   @relation("UpdatedProfiles")
+  blocked_profiles               profiles[]                   @relation("BlockedProfiles")
   performed_user_management_logs UserManagementLog[]          @relation("PerformedActions")
   targeted_user_management_logs  UserManagementLog[]          @relation("TargetOfActions")
   evaluator_assignments          EvaluatorAssignment[]        @relation("AssignedEvaluator")
   assigned_evaluator_assignments EvaluatorAssignment[]        @relation("AssignedByManager")
   management_decisions           ManagementDecision[]         @relation("DecisionMadeBy")
   idea_revisions_requested       IdeaRevision[]               @relation("RevisionRequestedBy")
+  assigned_ideas                 Idea[]                       @relation("assigned_ideas")
+  idea_status_logs               IdeaStatusLog[]
+  idea_action_logs               IdeaActionLog[]
 
   @@map("profiles")
+  @@index([email], name: "idx_profiles_email")
   @@schema("public")
 }
 
@@ -165,10 +173,11 @@ model Idea {
   prototype_images_urls          String[]              @default([])
   current_stage                  String?               @default("draft")
   language                       String?               @default("ar") @db.VarChar
+  assigned_evaluator_id          String?               @db.Uuid
 
-  // Relations
   submitter_id                   String                @db.Uuid
-  submitter                      Profile               @relation("submitter_ideas", fields: [submitter_id], references: [id])
+  submitter                      profiles              @relation("submitter_ideas", fields: [submitter_id], references: [id])
+  assigned_evaluator             profiles?             @relation("assigned_ideas", fields: [assigned_evaluator_id], references: [id])
   evaluations                    Evaluation[]
   comments                       IdeaComment[]
   attachments                    IdeaAttachment[]
@@ -179,6 +188,7 @@ model Idea {
   action_logs                    IdeaActionLog[]
 
   @@map("ideas")
+  @@index([submitter_id], name: "idx_ideas_submitter")
   @@schema("public")
 }
 
@@ -191,7 +201,7 @@ model IdeaComment {
   idea_id    String   @db.Uuid
   idea       Idea     @relation(fields: [idea_id], references: [id], onDelete: Cascade)
   user_id    String   @db.Uuid
-  user       Profile  @relation(fields: [user_id], references: [id])
+  user       profiles  @relation(fields: [user_id], references: [id])
 
   @@map("idea_comments")
   @@schema("public")
@@ -208,7 +218,7 @@ model IdeaAttachment {
 
   // Relations
   idea     Idea    @relation(fields: [idea_id], references: [id])
-  uploader Profile @relation("UploadedAttachments", fields: [uploaded_by], references: [id])
+  uploader profiles @relation("UploadedAttachments", fields: [uploaded_by], references: [id])
 
   @@map("idea_attachments")
   @@schema("public")
@@ -230,22 +240,21 @@ model ListOfValue {
 
 model Evaluation {
   id                String         @id @default(uuid()) @db.Uuid
+  idea_id           String         @db.Uuid
+  evaluator_id      String         @db.Uuid
   evaluation_type   EvaluationType @default(technology)
-  feasibility_score Int?
-  impact_score      Int?
-  innovation_score  Int?
-  overall_score     Int?
-  enrichment_score  Int?
+  feasibility_score Int?           @default(1)
+  impact_score      Int?           @default(1)
+  innovation_score  Int?           @default(1)
+  overall_score     Int?           @default(1)
+  enrichment_score  Int?           @default(1)
   feedback          String?
   recommendation    String?
   created_at        DateTime       @default(now()) @db.Timestamptz
   updated_at        DateTime       @default(now()) @updatedAt @db.Timestamptz
 
-  // Relations
-  idea_id           String         @db.Uuid
-  idea              Idea           @relation(fields: [idea_id], references: [id], onDelete: Cascade)
-  evaluator_id      String         @db.Uuid
-  evaluator         Profile        @relation(fields: [evaluator_id], references: [id])
+  idea       Idea     @relation(fields: [idea_id], references: [id], onDelete: Cascade)
+  evaluator  profiles @relation(fields: [evaluator_id], references: [id])
 
   @@unique([idea_id, evaluator_id, evaluation_type], name: "unique_idea_evaluator_type")
   @@map("evaluations")
@@ -255,14 +264,15 @@ model Evaluation {
 model EvaluatorAssignment {
   id              String         @id @default(uuid()) @db.Uuid
   idea_id         String         @db.Uuid
-  idea            Idea           @relation(fields: [idea_id], references: [id], onDelete: Cascade)
   evaluator_id    String         @db.Uuid
-  evaluator       Profile        @relation("AssignedEvaluator", fields: [evaluator_id], references: [id], onDelete: Cascade)
   evaluation_type EvaluationType
   assigned_by     String         @db.Uuid
-  assignedManager Profile        @relation("AssignedByManager", fields: [assigned_by], references: [id])
   assigned_at     DateTime       @default(now()) @db.Timestamptz
   is_active       Boolean        @default(true)
+
+  idea            Idea     @relation(fields: [idea_id], references: [id], onDelete: Cascade)
+  evaluator       profiles @relation("AssignedEvaluator", fields: [evaluator_id], references: [id], onDelete: Cascade)
+  assignedManager profiles @relation("AssignedByManager", fields: [assigned_by], references: [id])
 
   @@unique([idea_id, evaluation_type], name: "unique_idea_evaluation_type")
   @@unique([idea_id, evaluator_id], name: "no_duplicate_evaluator_per_idea")
@@ -276,7 +286,7 @@ model ManagementDecision {
   idea                  Idea                   @relation(fields: [idea_id], references: [id])
   decision_type         ManagementDecisionType
   decision_by           String                 @db.Uuid
-  decider               Profile                @relation("DecisionMadeBy", fields: [decision_by], references: [id])
+  decider               profiles                @relation("DecisionMadeBy", fields: [decision_by], references: [id])
   decision_at           DateTime               @default(now()) @db.Timestamptz
   priority              PriorityLevel?
   department_assignment String?
@@ -300,7 +310,7 @@ model IdeaRevision {
   idea                  Idea      @relation(fields: [idea_id], references: [id])
   revision_number       Int
   requested_by          String    @db.Uuid
-  requester             Profile   @relation("RevisionRequestedBy", fields: [requested_by], references: [id])
+  requester             profiles   @relation("RevisionRequestedBy", fields: [requested_by], references: [id])
   requested_at          DateTime  @default(now()) @db.Timestamptz
   revision_areas        String[]
   feedback_en           String?
@@ -318,9 +328,9 @@ model IdeaRevision {
 model UserManagementLog {
   id             String   @id @default(uuid()) @db.Uuid
   performed_by   String   @db.Uuid
-  performer      Profile  @relation("PerformedActions", fields: [performed_by], references: [id])
+  performer      profiles  @relation("PerformedActions", fields: [performed_by], references: [id])
   target_user_id String   @db.Uuid
-  target_user    Profile  @relation("TargetOfActions", fields: [target_user_id], references: [id])
+  target_user    profiles  @relation("TargetOfActions", fields: [target_user_id], references: [id])
   action_type    String
   action_details Json?
   created_at     DateTime @default(now()) @db.Timestamptz
@@ -336,7 +346,7 @@ model IdeaStatusLog {
   status          String
   previous_status String?
   changed_by      String   @db.Uuid
-  changer         User     @relation(fields: [changed_by], references: [id])
+  changer         profiles @relation(fields: [changed_by], references: [id])
   user_role       UserRole
   comments        String?
   timestamp       DateTime @default(now()) @db.Timestamptz
@@ -349,8 +359,9 @@ model IdeaActionLog {
   action_id     String   @id @default(uuid()) @db.Uuid
   idea_id       String   @db.Uuid
   idea          Idea     @relation(fields: [idea_id], references: [id], onDelete: Cascade)
+  action_type    String
   performed_by  String   @db.Uuid
-  performer     User     @relation(fields: [performed_by], references: [id])
+  performer     profiles @relation(fields: [performed_by], references: [id])
   user_role     UserRole
   action_detail String?
   timestamp     DateTime @default(now()) @db.Timestamptz
@@ -666,13 +677,11 @@ model User {
   is_sso_user                 Boolean   @default(false)
   deleted_at                  DateTime? @db.Timestamptz
   is_anonymous                Boolean   @default(false)
-  profile                     Profile?
+  profile                     profiles?
   identities                  Identity[]
   mfa_factors                 MfaFactor[]
   one_time_tokens             OneTimeToken[]
   sessions                    Session[]
-  idea_status_logs            IdeaStatusLog[]
-  idea_action_logs            IdeaActionLog[]
 
   @@map("users")
   @@schema("auth")

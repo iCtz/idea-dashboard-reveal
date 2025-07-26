@@ -70,6 +70,16 @@ export async function updateProfile(payload: UpdateProfilePayload) {
         department: payload.department,
         role: payload.role,
         email_confirmed: true,
+        is_active: null,
+        specialization: [],
+        password_reset_required: null,
+        preferred_language: "ar",
+        profile_picture_url: null,
+        last_login: null,
+        blocked_at: null,
+        created_by_id: null,
+        updated_by_id: null,
+        blocked_by_id: null
       });
     }
 
